@@ -3,6 +3,7 @@
 *.pdf
 *.docx
 *.pptx
+*.DS_Store
 *.ipynb_checkpoints/
 
 /data
