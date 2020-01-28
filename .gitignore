@@ -1,0 +1,10 @@
+*.png
+*.PNG
+*.pdf
+*.docx
+*.pptx
+*.ipynb_checkpoints/
+
+/data
+/meetings
+/papers
