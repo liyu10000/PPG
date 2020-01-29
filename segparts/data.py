@@ -140,8 +140,8 @@ class PPGDataset(Dataset):
 
     def __getitem__(self, idx):
         name = self.names[idx]
-        label_info = label_dict[name]
-        img = cv2.imread(label_dict[name]["path"])
+        label_info = self.label_dict[name]
+        img = cv2.imread(label_info["path"])
         img, factor, pad = resize_with_pad(img)
         mask = make_mask(label_info, self.class_index, factor, pad)
 
@@ -155,7 +155,7 @@ class PPGDataset(Dataset):
         return len(self.names)
 
 
-def provider(
+def generator(
             image_dir,
             label_dir,
             phase,

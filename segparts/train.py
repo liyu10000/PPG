@@ -21,7 +21,7 @@ from torch.utils.data import DataLoader, Dataset, sampler
 from albumentations import (HorizontalFlip, ShiftScaleRotate, Normalize, Resize, Compose, GaussNoise)
 from albumentations.pytorch import ToTensor
 
-from data import provider
+from data import generator
 from metrics import Meter, epoch_log
 
 
@@ -35,20 +35,18 @@ torch.backends.cudnn.deterministic = True
 # torch.backends.cudnn.benchmark = False
 
 
-sample_submission_path = '../data/severstal-steel-defect-detection/sample_submission.csv'
-train_df_path = '../data/severstal-steel-defect-detection/train.csv'
-data_folder = "../data/severstal-steel-defect-detection/"
-test_data_folder = "../data/severstal-steel-defect-detection/test_images"
+image_dir = "../data/labeled/images"
+label_dir = "../data/labeled/labels"
 
 
 class Trainer(object):
     '''This class takes care of training and validation of our model'''
     def __init__(self, model):
-        self.num_workers = 6
-        self.batch_size = {"train": 4, "val": 4}
-        self.accumulation_steps = 32 // self.batch_size['train']
+        self.num_workers = 8
+        self.batch_size = {"train": 8, "val": 8}
+        self.accumulation_steps = 64 // self.batch_size['train']
         self.lr = 5e-4
-        self.num_epochs = 2
+        self.num_epochs = 20
         self.best_loss = float("inf")
         self.phases = ["train", "val"]
         self.device = torch.device("cuda:0")
@@ -60,9 +58,9 @@ class Trainer(object):
         self.net = self.net.to(self.device)
         cudnn.benchmark = True
         self.dataloaders = {
-            phase: provider(
-                data_folder=data_folder,
-                df_path=train_df_path,
+            phase: generator(
+                image_dir=image_dir,
+                label_dir=label_dir,
                 phase=phase,
                 mean=(0.485, 0.456, 0.406),
                 std=(0.229, 0.224, 0.225),
@@ -133,13 +131,15 @@ class Trainer(object):
                 torch.save(state, "./model.pth")
             print()
 
+
+
 # aux_params=dict(
 #     pooling='max',             # one of 'avg', 'max'
 #     dropout=0.5,               # dropout ratio, default is None
 #     activation=None,           # activation function, default is None, can choose 'sigmoid'
 #     classes=4,                 # define number of output labels
 # )
-model = smp.Unet("resnet18", in_channels=3, classes=4, encoder_weights="imagenet", activation=None)
+model = smp.Unet("resnet18", in_channels=3, classes=6, encoder_weights="imagenet", activation=None)
 
 model_trainer = Trainer(model)
 model_trainer.start()
