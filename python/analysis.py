@@ -1,6 +1,7 @@
 import os
 import cv2
 import numpy as np
+import pandas as pd
 from pprint import pprint
 
 
@@ -41,11 +42,28 @@ def get_label(data_dir):
     pprint(summ)
 
 
+def resize_with_pad(img, W=640, H=480):
+    h, w = img.shape
+    if H // h == W // w:  # aspect ratio matches
+        img = cv2.resize(img, (W, H))
+        return img, None
+    else:  # need to pad in height direction
+        h_ = H * w // W
+        pad = (H - h_) // 2
+        img = cv2.resize(img, (W, h_))
+        img = cv2.copyMakeBorder(img, pad, pad, 0, 0, cv2.BORDER_CONSTANT, 0)  # pad with constant zeros
+        return img, pad
+
+
+def make_mask(label_csvs, label_dict, pad, W=640, H=480):
+    pass
+
+
 if __name__ == "__main__":
     data_dir = "../data/labeled"
     seed_images = scan_files(data_dir, postfix="HR.png")
     seed_images.sort()
     print("# of images:", len(seed_images))
     
-    # get_size(seed_images)
+    get_size(seed_images)
     get_label(data_dir)

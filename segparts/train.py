@@ -6,22 +6,23 @@ import warnings
 import random
 import numpy as np
 import pandas as pd
-import pretrainedmodels
+import segmentation_models_pytorch as smp
+from matplotlib import pyplot as plt
 from tqdm import tqdm_notebook as tqdm
-from torch.optim.lr_scheduler import ReduceLROnPlateau
 from sklearn.model_selection import train_test_split
+
 import torch
 import torch.nn as nn
 from torch.nn import functional as F
 import torch.optim as optim
+from torch.optim.lr_scheduler import ReduceLROnPlateau
 import torch.backends.cudnn as cudnn
 from torch.utils.data import DataLoader, Dataset, sampler
-from matplotlib import pyplot as plt
 from albumentations import (HorizontalFlip, ShiftScaleRotate, Normalize, Resize, Compose, GaussNoise)
 from albumentations.pytorch import ToTensor
 
 from data import provider
-from metrics import Meter
+from metrics import Meter, epoch_log
 
 
 warnings.filterwarnings("ignore")
@@ -31,7 +32,13 @@ os.environ["PYTHONHASHSEED"] = str(seed)
 np.random.seed(seed)
 torch.cuda.manual_seed(seed)
 torch.backends.cudnn.deterministic = True
-torch.backends.cudnn.benchmark = False
+# torch.backends.cudnn.benchmark = False
+
+
+sample_submission_path = '../data/severstal-steel-defect-detection/sample_submission.csv'
+train_df_path = '../data/severstal-steel-defect-detection/train.csv'
+data_folder = "../data/severstal-steel-defect-detection/"
+test_data_folder = "../data/severstal-steel-defect-detection/test_images"
 
 
 class Trainer(object):
@@ -41,7 +48,7 @@ class Trainer(object):
         self.batch_size = {"train": 4, "val": 4}
         self.accumulation_steps = 32 // self.batch_size['train']
         self.lr = 5e-4
-        self.num_epochs = 20
+        self.num_epochs = 2
         self.best_loss = float("inf")
         self.phases = ["train", "val"]
         self.device = torch.device("cuda:0")
@@ -72,6 +79,7 @@ class Trainer(object):
         images = images.to(self.device)
         masks = targets.to(self.device)
         outputs = self.net(images)
+        # print(images.size(), outputs.size(), masks.size())
         loss = self.criterion(outputs, masks)
         return loss, outputs
 
@@ -125,13 +133,13 @@ class Trainer(object):
                 torch.save(state, "./model.pth")
             print()
 
-model_name = 'resnet18'
-model = pretrainedmodels.__dict__[model_name](num_classes=4, pretrained='imagenet')
-
-sample_submission_path = '../data/severstal-steel-defect-detection/sample_submission.csv'
-train_df_path = '../data/severstal-steel-defect-detection/train.csv'
-data_folder = "../data/severstal-steel-defect-detection/"
-test_data_folder = "../data/severstal-steel-defect-detection/test_images"
+# aux_params=dict(
+#     pooling='max',             # one of 'avg', 'max'
+#     dropout=0.5,               # dropout ratio, default is None
+#     activation=None,           # activation function, default is None, can choose 'sigmoid'
+#     classes=4,                 # define number of output labels
+# )
+model = smp.Unet("resnet18", in_channels=3, classes=4, encoder_weights="imagenet", activation=None)
 
 model_trainer = Trainer(model)
 model_trainer.start()
