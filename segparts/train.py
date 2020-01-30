@@ -13,7 +13,7 @@ import torch.optim as optim
 from torch.optim.lr_scheduler import ReduceLROnPlateau
 
 from data import generator
-from metrics import Meter, epoch_log
+from metrics import Meter
 
 
 warnings.filterwarnings("ignore")
@@ -37,25 +37,25 @@ class Trainer(object):
         self.num_workers = 8
         self.batch_size = {"train": 8, "val": 8}
         self.accumulation_steps = 64 // self.batch_size['train']
-        self.lr = 5e-4
-        self.num_epochs = 4
+        self.lr = 1e-3
+        self.resume = True
+        self.num_epochs = 60
         self.epoch = 0
         self.best_loss = float("inf")
         self.phases = ["train", "val"]
         self.device = torch.device("cuda:0")
         torch.set_default_tensor_type("torch.cuda.FloatTensor")
-        self.resume = False
         self.net = model
         if self.resume:
             checkpoint = torch.load(best_model)
-            self.epoch = checkpoint["epoch"] # it may not be the last epoch being runned
-            self.epoch = 20 # the last epoch number
+            self.epoch = checkpoint["epoch"] + 1  # it may not be the last epoch being runned
+            # self.epoch = 40 # the last epoch number
             self.best_loss = checkpoint["best_loss"]
             self.net.load_state_dict(checkpoint["state_dict"])
+        self.net = self.net.to(self.device)
         self.criterion = torch.nn.BCEWithLogitsLoss()
         self.optimizer = optim.Adam(self.net.parameters(), lr=self.lr)
         self.scheduler = ReduceLROnPlateau(self.optimizer, mode="min", patience=3, verbose=True)
-        self.net = self.net.to(self.device)
         self.dataloaders = {
             phase: generator(
                 image_dir=image_dir,
@@ -68,9 +68,6 @@ class Trainer(object):
             )
             for phase in self.phases
         }
-        self.losses = {phase: [] for phase in self.phases}
-        self.iou_scores = {phase: [] for phase in self.phases}
-        self.dice_scores = {phase: [] for phase in self.phases}
         
     def forward(self, images, targets):
         images = images.to(self.device)
@@ -81,7 +78,7 @@ class Trainer(object):
         return loss, outputs
 
     def iterate(self, epoch, phase):
-        meter = Meter(phase, epoch)
+        meter = Meter()
         start = time.strftime("%H:%M:%S")
         print(f"Starting epoch: {epoch} | phase: {phase} | Time: {start}")
         batch_size = self.batch_size[phase]
@@ -105,10 +102,7 @@ class Trainer(object):
             meter.update(targets, outputs)
 #             tk0.set_postfix(loss=(running_loss / ((itr + 1))))
         epoch_loss = (running_loss * self.accumulation_steps) / total_batches
-        dice, iou = epoch_log(phase, epoch, epoch_loss, meter, start)
-        self.losses[phase].append(epoch_loss)
-        self.dice_scores[phase].append(dice)
-        self.iou_scores[phase].append(iou)
+        meter.log(epoch_loss)
         torch.cuda.empty_cache()
         return epoch_loss
 

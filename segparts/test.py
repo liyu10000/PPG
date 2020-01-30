@@ -1,4 +1,5 @@
 import os
+import sys
 import cv2
 import time
 import random
@@ -48,6 +49,9 @@ class Tester(object):
         self.classes = classes
         # load weights
         self.net = model
+        if not os.path.isfile(best_model):
+            print('*****WARNING*****: {} does not exist.'.format(best_model))
+            sys.exit()
         checkpoint = torch.load(best_model)
         self.epoch = checkpoint["epoch"]
         self.best_loss = checkpoint["best_loss"]
@@ -74,10 +78,10 @@ class Tester(object):
             probs = F.softmax(outputs, dim=1)
         else:
             probs = torch.sigmoid(outputs)
+        probs = probs.cpu().numpy()
         return probs
 
     def save(self, names, probs):
-        probs = probs.cpu().numpy()
         for name, prob in zip(names, probs):
             np.save(os.path.join(self.pred_mask_dir, name+'.npy'), prob)
 
@@ -87,6 +91,7 @@ class Tester(object):
                 names, images, targets = batch
                 probs = self.forward(images, targets)
                 self.save(names, probs)
+                print("Finished batch {}:".format(i), names)
                 break
 
 

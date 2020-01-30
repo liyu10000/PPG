@@ -72,7 +72,7 @@ def compute_iou_batch(outputs, labels, classes=None):
 
 class Meter:
     '''A meter to keep track of iou and dice scores throughout an epoch'''
-    def __init__(self, phase, epoch):
+    def __init__(self):
         self.base_threshold = 0.5 # <<<<<<<<<<< here's the threshold
         self.base_dice_scores = []
         self.dice_neg_scores = []
@@ -97,11 +97,9 @@ class Meter:
         iou = np.nanmean(self.iou_scores)
         return dices, iou
 
-
-def epoch_log(phase, epoch, epoch_loss, meter, start):
-    '''logging the metrics at the end of an epoch'''
-    dices, iou = meter.get_metrics()
-    dice, dice_neg, dice_pos = dices
-    print("Loss: %0.4f | IoU: %0.4f | dice: %0.4f | dice_neg: %0.4f | dice_pos: %0.4f" % (epoch_loss, iou, dice, dice_neg, dice_pos))
-    return dice, iou
+    def log(self, epoch_loss):
+        '''logging the metrics at the end of an epoch'''
+        dices, iou = self.get_metrics()
+        dice, dice_neg, dice_pos = dices
+        print("Loss: %0.4f | IoU: %0.4f | dice: %0.4f | dice_neg: %0.4f | dice_pos: %0.4f" % (epoch_loss, iou, dice, dice_neg, dice_pos))
 

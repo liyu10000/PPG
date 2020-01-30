@@ -181,6 +181,7 @@ def generator(
         sample_keys = keys[:8]
     else:
         sample_keys = keys
+    sample_keys = keys  # use all data for train & val
     sample_label_dict = {key:label_dict[key] for key in sample_keys}
     dataset = PPGDataset(sample_label_dict, class_index, mean, std, phase)
     dataloader = DataLoader(
