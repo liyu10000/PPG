@@ -3,10 +3,15 @@ import cv2
 import random
 import numpy as np
 import pandas as pd
-from sklearn.model_selection import train_test_split
-from torch.utils.data import DataLoader, Dataset, sampler
+from torch.utils.data import DataLoader, Dataset, random_split
 from albumentations import HorizontalFlip, ShiftScaleRotate, Normalize, Resize, Compose, GaussNoise
 from albumentations.pytorch import ToTensor
+
+
+seed = 42
+random.seed(seed)
+os.environ["PYTHONHASHSEED"] = str(seed)
+np.random.seed(seed)
 
 
 # ### RLE-Mask utility functions
@@ -149,7 +154,7 @@ class PPGDataset(Dataset):
         img = augmented['image']
         mask = augmented['mask'] # 1xHxWxC
         mask = mask[0].permute(2, 0, 1) # CxHxW
-        return img, mask
+        return name, img, mask
 
     def __len__(self):
         return len(self.names)
@@ -161,20 +166,30 @@ def generator(
             phase,
             mean=None,
             std=None,
+            shuffle=True,
             batch_size=8,
             num_workers=4,
             ):
     label_dict = get_label_dict(image_dir, label_dir)
     class_index = {'STBD TS':0, 'STBD BT':1, 'STBD VS': 2, 'PS TS':3, 'PS BT':4, 'PS VS':5}
-    image_dataset = PPGDataset(label_dict, class_index, mean, std, phase)
+    keys = list(label_dict)
+    keys.sort()
+    random.Random(seed).shuffle(keys) # shuffle with seed, so that yielding same sampling
+    if phase == "train":
+        sample_keys = keys[8:]
+    elif phase == "val":
+        sample_keys = keys[:8]
+    else:
+        sample_keys = keys
+    sample_label_dict = {key:label_dict[key] for key in sample_keys}
+    dataset = PPGDataset(sample_label_dict, class_index, mean, std, phase)
     dataloader = DataLoader(
-        image_dataset,
+        dataset,
         batch_size=batch_size,
         num_workers=num_workers,
         pin_memory=True,
-        shuffle=True,   
+        shuffle=shuffle,   
     )
-
     return dataloader
 
 

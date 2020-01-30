@@ -1,42 +1,34 @@
 import os
 import cv2
-import pdb
 import time
-import warnings
 import random
+import warnings
 import numpy as np
 import pandas as pd
 import segmentation_models_pytorch as smp
 from matplotlib import pyplot as plt
-from tqdm import tqdm_notebook as tqdm
-from sklearn.model_selection import train_test_split
-
+from tqdm import tqdm_notebook
 import torch
-import torch.nn as nn
-from torch.nn import functional as F
 import torch.optim as optim
 from torch.optim.lr_scheduler import ReduceLROnPlateau
-import torch.backends.cudnn as cudnn
-from torch.utils.data import DataLoader, Dataset, sampler
-from albumentations import (HorizontalFlip, ShiftScaleRotate, Normalize, Resize, Compose, GaussNoise)
-from albumentations.pytorch import ToTensor
 
 from data import generator
 from metrics import Meter, epoch_log
 
 
 warnings.filterwarnings("ignore")
-seed = 69
+seed = 42
 random.seed(seed)
 os.environ["PYTHONHASHSEED"] = str(seed)
 np.random.seed(seed)
 torch.cuda.manual_seed(seed)
 torch.backends.cudnn.deterministic = True
-# torch.backends.cudnn.benchmark = False
+torch.backends.cudnn.benchmark = True
 
 
 image_dir = "../data/labeled/images"
 label_dir = "../data/labeled/labels"
+best_model = "./xcep_model.pth"
 
 
 class Trainer(object):
@@ -46,17 +38,24 @@ class Trainer(object):
         self.batch_size = {"train": 8, "val": 8}
         self.accumulation_steps = 64 // self.batch_size['train']
         self.lr = 5e-4
-        self.num_epochs = 20
+        self.num_epochs = 4
+        self.epoch = 0
         self.best_loss = float("inf")
         self.phases = ["train", "val"]
         self.device = torch.device("cuda:0")
         torch.set_default_tensor_type("torch.cuda.FloatTensor")
+        self.resume = False
         self.net = model
+        if self.resume:
+            checkpoint = torch.load(best_model)
+            self.epoch = checkpoint["epoch"] # it may not be the last epoch being runned
+            self.epoch = 20 # the last epoch number
+            self.best_loss = checkpoint["best_loss"]
+            self.net.load_state_dict(checkpoint["state_dict"])
         self.criterion = torch.nn.BCEWithLogitsLoss()
         self.optimizer = optim.Adam(self.net.parameters(), lr=self.lr)
         self.scheduler = ReduceLROnPlateau(self.optimizer, mode="min", patience=3, verbose=True)
         self.net = self.net.to(self.device)
-        cudnn.benchmark = True
         self.dataloaders = {
             phase: generator(
                 image_dir=image_dir,
@@ -75,10 +74,10 @@ class Trainer(object):
         
     def forward(self, images, targets):
         images = images.to(self.device)
-        masks = targets.to(self.device)
+        targets = targets.to(self.device)
         outputs = self.net(images)
-        # print(images.size(), outputs.size(), masks.size())
-        loss = self.criterion(outputs, masks)
+        # print(images.size(), targets.size(), outputs.size())
+        loss = self.criterion(outputs, targets)
         return loss, outputs
 
     def iterate(self, epoch, phase):
@@ -90,10 +89,10 @@ class Trainer(object):
         dataloader = self.dataloaders[phase]
         running_loss = 0.0
         total_batches = len(dataloader)
-#         tk0 = tqdm(dataloader, total=total_batches)
+#         tk0 = tqdm_notebook(dataloader, total=total_batches)
         self.optimizer.zero_grad()
         for itr, batch in enumerate(dataloader): # replace `dataloader` with `tk0` for tqdm
-            images, targets = batch
+            _, images, targets = batch
             loss, outputs = self.forward(images, targets)
             loss = loss / self.accumulation_steps
             if phase == "train":
@@ -114,33 +113,35 @@ class Trainer(object):
         return epoch_loss
 
     def start(self):
-        for epoch in range(self.num_epochs):
-            self.iterate(epoch, "train")
+        while self.epoch < self.num_epochs:
+            self.iterate(self.epoch, "train")
             state = {
-                "epoch": epoch,
+                "epoch": self.epoch,
                 "best_loss": self.best_loss,
                 "state_dict": self.net.state_dict(),
-                "optimizer": self.optimizer.state_dict(),
+                # "optimizer": self.optimizer.state_dict(),
             }
             with torch.no_grad():
-                val_loss = self.iterate(epoch, "val")
+                val_loss = self.iterate(self.epoch, "val")
                 self.scheduler.step(val_loss)
             if val_loss < self.best_loss:
                 print("******** New optimal found, saving state ********")
                 state["best_loss"] = self.best_loss = val_loss
-                torch.save(state, "./model.pth")
+                torch.save(state, best_model)
+            self.epoch += 1
             print()
 
 
 
-# aux_params=dict(
-#     pooling='max',             # one of 'avg', 'max'
-#     dropout=0.5,               # dropout ratio, default is None
-#     activation=None,           # activation function, default is None, can choose 'sigmoid'
-#     classes=4,                 # define number of output labels
-# )
-model = smp.Unet("resnet18", in_channels=3, classes=6, encoder_weights="imagenet", activation=None)
+if __name__ == "__main__":
+    # aux_params=dict(
+    #     pooling='max',             # one of 'avg', 'max'
+    #     dropout=0.5,               # dropout ratio, default is None
+    #     activation=None,           # activation function, default is None, can choose 'sigmoid'
+    #     classes=4,                 # define number of output labels
+    # )
+    model = smp.Unet("xception", in_channels=3, classes=6, encoder_weights="imagenet", activation=None)
 
-model_trainer = Trainer(model)
-model_trainer.start()
+    trainer = Trainer(model)
+    trainer.start()
 
