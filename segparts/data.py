@@ -61,19 +61,6 @@ def scan_files(directory, prefix=None, postfix=None):
                 files_list.append(os.path.join(root, special_file))
     return files_list
 
-def resize_with_pad(img, W=640, H=480):
-    h, w, _ = img.shape
-    factor = W / w  # scaling factor, <= 1.0
-    if H / h == factor:  # aspect ratio matches
-        pad = 0
-        img = cv2.resize(img, (W, H))
-    else:  # need to pad in height direction
-        h_ = int(h * factor)
-        pad = int((H - h_) / 2)
-        img = cv2.resize(img, (W, h_))
-        img = cv2.copyMakeBorder(img, pad, pad, 0, 0, cv2.BORDER_CONSTANT, 0)  # pad with constant zeros
-    return img, factor, pad
-
 def get_label_dict(image_dir, label_dir):
     images = os.listdir(image_dir)
     labels = scan_files(label_dir, postfix='.csv')
@@ -85,6 +72,8 @@ def get_label_dict(image_dir, label_dir):
         side = tokens[1].split('_')[1]
         part = tokens[2]
         key = side + ' ' + part
+        if not name in label_dict:
+            continue
         if not key in label_dict[name]:
             label_dict[name][key] = []
         label_dict[name][key].append(f)
@@ -92,7 +81,33 @@ def get_label_dict(image_dir, label_dir):
     # pprint(label_dict)
     return label_dict
 
-def make_mask(label_info, class_index, factor, pad, W=640, H=480):
+def resize_with_pad(img, W=640, H=480):
+    h, w, _ = img.shape  # usually we expect h >= H and w >= W
+    factor = 1.0         # scaling factor, <= 1.0
+    direction = "None"   # pad direction, can be None, Height, Width
+    pad = 0
+    if H / h == W / w:   # aspect ratio matches
+        factor = W / w
+        img = cv2.resize(img, (W, H))
+    elif H / h > W / w:  # need to pad in height direction
+        factor = W / w
+        direction = "Height"
+        h_ = int(h * factor)
+        pad = int((H - h_) / 2)
+        pad_ = H - h_ - pad
+        img = cv2.resize(img, (W, h_))
+        img = cv2.copyMakeBorder(img, pad, pad_, 0, 0, cv2.BORDER_CONSTANT, 0)  # pad with constant zeros
+    else:                # need to pad in width direction
+        factor = H / h
+        direction = "Width"
+        w_ = int(w * factor)
+        pad = int((W - w_) / 2)
+        pad_ = W - w_ - pad
+        img = cv2.resize(img, (w_, H))
+        img = cv2.copyMakeBorder(img, 0, 0, pad, pad_, cv2.BORDER_CONSTANT, 0)  # pad with constant zeros
+    return img, factor, direction, pad
+
+def make_mask(label_info, class_index, factor, direction, pad, W=640, H=480):
     """ 
     :param name: image name, like 'V9 50HR'
     :param class_index: {'STBD TS':0, 'STBD BT':1, 'STBD VS': 2, 'PS TS':3, 'PS BT':4, 'PS VS':5}
@@ -108,11 +123,13 @@ def make_mask(label_info, class_index, factor, pad, W=640, H=480):
             points = df.to_numpy(dtype=np.float32)
             points *= factor  # resize
             if pad > 0:
-                points[:, 1] += pad  # add pad to y
+                if direction == "Height":
+                    points[:, 1] += pad  # add pad to y
+                else:
+                    points[:, 0] += pad  # add pad to x
             cv2.fillConvexPoly(mask[i, :, :], points.astype(int), 1.0)  # mask[:, :, i] doesn't work
     mask = mask.transpose(1, 2, 0) # H, W, C
     return mask
-
 
 def get_transforms(phase, mean, std):
     list_transforms = []
@@ -147,8 +164,8 @@ class PPGDataset(Dataset):
         name = self.names[idx]
         label_info = self.label_dict[name]
         img = cv2.imread(label_info["path"])
-        img, factor, pad = resize_with_pad(img)
-        mask = make_mask(label_info, self.class_index, factor, pad)
+        img, factor, direction, pad = resize_with_pad(img)
+        mask = make_mask(label_info, self.class_index, factor, direction, pad)
 
         augmented = self.transforms(image=img, mask=mask)
         img = augmented['image']
@@ -172,7 +189,7 @@ def generator(
             ):
     label_dict = get_label_dict(image_dir, label_dir)
     class_index = {'STBD TS':0, 'STBD BT':1, 'STBD VS': 2, 'PS TS':3, 'PS BT':4, 'PS VS':5}
-    keys = list(label_dict)
+    keys = list(label_dict.keys())
     keys.sort()
     random.Random(seed).shuffle(keys) # shuffle with seed, so that yielding same sampling
     if phase == "train":
