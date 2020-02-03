@@ -117,7 +117,7 @@ def make_mask(label_info, class_index, factor, direction, pad, W=640, H=480):
     :param name: image name, like 'V9 50HR'
     :param class_index: {'STBD TS':0, 'STBD BT':1, 'STBD VS': 2, 'PS TS':3, 'PS BT':4, 'PS VS':5}
     """
-    class_num = len(class_index)
+    class_num = len(set(class_index.values()))  # determine number of classes by class indices
     mask = np.zeros((class_num, H, W), dtype=np.float32)
     for side_part, fs in label_info.items():
         if side_part == "path":
