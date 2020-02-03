@@ -65,6 +65,7 @@ def get_label_dict(image_dir, label_dir):
     images = os.listdir(image_dir)
     labels = scan_files(label_dir, postfix='.csv')
     label_dict = {os.path.splitext(f)[0]:{'path':os.path.join(image_dir, f)} for f in images}
+    has_labels = set() # store image names with labels
     for f in labels:
         base_f = os.path.basename(f)
         tokens = base_f.split()
@@ -72,11 +73,15 @@ def get_label_dict(image_dir, label_dir):
         side = tokens[1].split('_')[1]
         part = tokens[2]
         key = side + ' ' + part
-        if not name in label_dict:
+        if not name in label_dict:  # no image
             continue
         if not key in label_dict[name]:
             label_dict[name][key] = []
         label_dict[name][key].append(f)
+        has_labels.add(name)
+    
+    # remove keys without labels
+    label_dict = {k:label_dict[k] for k in has_labels}
 
     # pprint(label_dict)
     return label_dict
@@ -198,7 +203,8 @@ def generator(
         sample_keys = keys[:8]
     else:
         sample_keys = keys
-    sample_keys = keys  # use all data for train & val
+    # sample_keys = keys  # use all data for train & val
+    print(phase, sample_keys)
     sample_label_dict = {key:label_dict[key] for key in sample_keys}
     dataset = PPGDataset(sample_label_dict, class_index, mean, std, phase)
     dataloader = DataLoader(
