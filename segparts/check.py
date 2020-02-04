@@ -5,28 +5,35 @@ import pandas as pd
 import matplotlib.pyplot as plt
 
 
-def plt_6image(img):
-    """ plot img with 6 channels
+def plt_mask(mask):
+    """ plot mask with 3 or 6 channels
     """
-    if img.shape[2] == 6:
-        img = img.transpose((2, 0, 1))
+    if mask.shape[2] == 6 or mask.shape[2] == 3:
+        mask = mask.transpose((2, 0, 1))
 
-    plt.figure(1, figsize=(18, 22))
-
-    classes = ['STBD TS', 'STBD BT', 'STBD VS', 'PS TS', 'PS BT', 'PS VS']
-    for i in range(3):
-        plt.subplot(3, 2, 2*i+1)
-        plt.imshow(img[i, :, :], "gray")
-        plt.xticks([])
-        plt.yticks([])
-        plt.title(classes[i], fontsize=40)
-
-        plt.subplot(3, 2, 2*i+2)
-        plt.imshow(img[i+3, :, :], "gray")
-        plt.xticks([])
-        plt.yticks([])
-        plt.title(classes[i+3], fontsize=40)
-
+    if mask.shape[0] == 6:
+        plt.figure(1, figsize=(18, 22))
+        classes = ['STBD TS', 'STBD BT', 'STBD VS', 'PS TS', 'PS BT', 'PS VS']
+        for i in range(3):
+            plt.subplot(3, 2, 2*i+1)
+            plt.imshow(mask[i, :, :], "gray")
+            plt.xticks([])
+            plt.yticks([])
+            plt.title(classes[i], fontsize=40)
+            plt.subplot(3, 2, 2*i+2)
+            plt.imshow(mask[i+3, :, :], "gray")
+            plt.xticks([])
+            plt.yticks([])
+            plt.title(classes[i+3], fontsize=40)
+    else:
+        plt.figure(1, figsize=(9, 22))
+        classes = ['TS', 'BT', 'VS']
+        for i in range(3):
+            plt.subplot(3, 1, i+1)
+            plt.imshow(mask[i, :, :], "gray")
+            plt.xticks([])
+            plt.yticks([])
+            plt.title(classes[i], fontsize=40)
     plt.show()
 
 
