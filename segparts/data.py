@@ -3,6 +3,7 @@ import cv2
 import random
 import numpy as np
 import pandas as pd
+from tqdm import tqdm
 from torch.utils.data import DataLoader, Dataset, random_split
 from albumentations import HorizontalFlip, ShiftScaleRotate, Normalize, Resize, Compose, GaussNoise
 from albumentations.pytorch import ToTensor
@@ -61,6 +62,7 @@ def scan_files(directory, prefix=None, postfix=None):
                 files_list.append(os.path.join(root, special_file))
     return files_list
 
+
 def get_label_dict(image_dir, label_dir):
     images = os.listdir(image_dir)
     labels = scan_files(label_dir, postfix='.csv')
@@ -85,6 +87,7 @@ def get_label_dict(image_dir, label_dir):
 
     # pprint(label_dict)
     return label_dict
+
 
 def resize_with_pad(img, W=640, H=480):
     h, w, _ = img.shape  # usually we expect h >= H and w >= W
@@ -112,6 +115,7 @@ def resize_with_pad(img, W=640, H=480):
         img = cv2.copyMakeBorder(img, 0, 0, pad, pad_, cv2.BORDER_CONSTANT, 0)  # pad with constant zeros
     return img, factor, direction, pad
 
+
 def make_mask(label_info, class_index, factor, direction, pad, W=640, H=480):
     """ 
     :param name: image name, like 'V9 50HR'
@@ -136,6 +140,7 @@ def make_mask(label_info, class_index, factor, direction, pad, W=640, H=480):
     mask = mask.transpose(1, 2, 0) # H, W, C
     return mask
 
+
 def get_transforms(phase, mean, std):
     list_transforms = []
     # if phase == "train":
@@ -152,6 +157,31 @@ def get_transforms(phase, mean, std):
     )
     list_trfms = Compose(list_transforms)
     return list_trfms
+
+
+def calc_mean_std(dataset):
+    """ Calculate pixel level mean and std over all pixels of all images
+    :param dataset: Dataset object, img and mask should be returned before
+                    any augmentation, the shape of them is HxWxC (comment out
+                    augment part in PPGDataset.__getitem__)
+    """
+    pixel_mean = np.zeros(3)
+    pixel_std = np.zeros(3)
+    k = 1
+    for _, image, _ in tqdm(dataset, "Computing mean/std", len(dataset), unit="image"):
+        image = np.array(image)
+        pixels = image.reshape((-1, image.shape[2]))
+
+        for pixel in pixels:
+            diff = pixel - pixel_mean
+            pixel_mean += diff / k
+            pixel_std += diff * (pixel - pixel_mean)
+            k += 1
+
+    pixel_std = np.sqrt(pixel_std / (k - 2))
+    pixel_mean /= 255.
+    pixel_std /= 255.
+    return pixel_mean, pixel_std
 
 
 ### Dataloader
@@ -198,11 +228,11 @@ def generator(
     keys.sort()
     random.Random(seed).shuffle(keys) # shuffle with seed, so that yielding same sampling
     if phase == "train":
-        sample_keys = keys[8:]
+        sample_keys = keys[4:20] + keys[28:]
     elif phase == "val":
-        sample_keys = keys[:8]
+        sample_keys = keys[20:28]
     else:
-        sample_keys = keys
+        sample_keys = keys[:4]
     # sample_keys = keys  # use all data for train & val
     print(phase, sample_keys)
     sample_label_dict = {key:label_dict[key] for key in sample_keys}
@@ -223,10 +253,15 @@ if __name__ == "__main__":
     label_dir = "../data/labeled/labels"
     label_dict = get_label_dict(image_dir, label_dir)
     class_index = {'STBD TS':0, 'STBD BT':1, 'STBD VS': 2, 'PS TS':3, 'PS BT':4, 'PS VS':5}
-    mean = None
-    std = None
-    phase = "train"
+    mean = (0.0, 0.0, 0.0)
+    std = (1.0, 1.0, 1.0)
+    phase = "test"
     dataset = PPGDataset(label_dict, class_index, mean, std, phase)
 
-    img, mask = dataset[0]
-    print(img.shape, mask.shape)
+    name, img, mask = dataset[0]
+    print(name, img.shape, mask.shape)
+
+    # calculate mean and std of dataset
+    mean, std = calc_mean_std(dataset)
+    print('mean: ', mean)
+    print('std: ', std)

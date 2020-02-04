@@ -18,7 +18,7 @@ classes = 6
 image_dir = "../data/labeled/images"
 label_dir = "../data/labeled/labels"
 pred_mask_dir = "../data/labeled/pred_masks"
-best_model = "./xcep_model.pth"
+best_model = "./xcep_tvt_60th.pth"
 
 
 
@@ -63,8 +63,10 @@ class Tester(object):
                                     image_dir=image_dir,
                                     label_dir=label_dir,
                                     phase="test",
-                                    mean=(0.485, 0.456, 0.406),
-                                    std=(0.229, 0.224, 0.225),
+                                    # mean=(0.485, 0.456, 0.406), # statistics from ImageNet
+                                    # std=(0.229, 0.224, 0.225),
+                                    mean=(0.400, 0.413, 0.481),   # statistics from custom dataset
+                                    std=(0.286, 0.267, 0.286),
                                     shuffle=False,
                                     batch_size=self.batch_size,
                                     num_workers=self.num_workers,

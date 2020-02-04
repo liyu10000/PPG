@@ -28,7 +28,8 @@ torch.backends.cudnn.benchmark = True
 
 image_dir = "../data/labeled/images"
 label_dir = "../data/labeled/labels"
-best_model = "./xcep_model.pth"
+start_model = "./xcep_tvt_60th.pth"
+save_model = "./xcep_tvt_90th.pth"
 
 
 class Trainer(object):
@@ -36,10 +37,10 @@ class Trainer(object):
     def __init__(self, model):
         self.num_workers = 8
         self.batch_size = {"train": 8, "val": 8}
-        self.accumulation_steps = 64 // self.batch_size['train']
+        self.accumulation_steps =  64 // self.batch_size['train']
         self.lr = 1e-3
         self.resume = True
-        self.num_epochs = 60
+        self.num_epochs = 90
         self.epoch = 0
         self.best_loss = float("inf")
         self.phases = ["train", "val"]
@@ -47,9 +48,9 @@ class Trainer(object):
         torch.set_default_tensor_type("torch.cuda.FloatTensor")
         self.net = model
         if self.resume:
-            checkpoint = torch.load(best_model)
+            checkpoint = torch.load(start_model)
             self.epoch = checkpoint["epoch"] + 1  # it may not be the last epoch being runned
-            # self.epoch = 40 # the last epoch number
+            self.epoch = 60 # the last epoch number
             self.best_loss = checkpoint["best_loss"]
             self.net.load_state_dict(checkpoint["state_dict"])
         self.net = self.net.to(self.device)
@@ -61,8 +62,10 @@ class Trainer(object):
                 image_dir=image_dir,
                 label_dir=label_dir,
                 phase=phase,
-                mean=(0.485, 0.456, 0.406),
-                std=(0.229, 0.224, 0.225),
+                # mean=(0.485, 0.456, 0.406), # statistics from ImageNet
+                # std=(0.229, 0.224, 0.225),
+                mean=(0.400, 0.413, 0.481),   # statistics from custom dataset
+                std=(0.286, 0.267, 0.286),
                 batch_size=self.batch_size[phase],
                 num_workers=self.num_workers,
             )
@@ -121,7 +124,7 @@ class Trainer(object):
             if val_loss < self.best_loss:
                 print("******** New optimal found, saving state ********")
                 state["best_loss"] = self.best_loss = val_loss
-                torch.save(state, best_model)
+                torch.save(state, save_model)
             self.epoch += 1
             print()
 
