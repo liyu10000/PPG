@@ -5,6 +5,23 @@ import pandas as pd
 import matplotlib.pyplot as plt
 
 
+def bin_mask(mask):
+    """ Check which side of mask contains bigger segments, combine the less to more.
+    """
+    if mask.shape[2] == 6:
+        mask = mask.transpose((2, 0, 1))
+    
+    stbd = np.sum(mask[:3, :, :])
+    ps   = np.sum(mask[3:, :, :])
+    if stbd > ps:
+        mask[:3, :, :] = np.where(mask[3:, :, :] > 0, mask[3:, :, :], mask[:3, :, :])
+        mask[3:, :, :].fill(0)
+    else:
+        mask[3:, :, :] = np.where(mask[:3, :, :] > 0, mask[:3, :, :], mask[3:, :, :])
+        mask[:3, :, :].fill(0)
+    return mask
+
+
 def plt_mask(mask):
     """ plot mask with 3 or 6 channels
     """
