@@ -13,7 +13,8 @@ import torch.optim as optim
 from torch.optim.lr_scheduler import ReduceLROnPlateau
 
 from data import generator
-from metrics import Meter
+from loss import bce_dice_loss
+from log import Meter
 
 
 warnings.filterwarnings("ignore")
@@ -28,8 +29,8 @@ torch.backends.cudnn.benchmark = True
 
 image_dir = "../data/labeled/images"
 label_dir = "../data/labeled/labels"
-start_model = "./xcep_tvt_60th.pth"
-save_model = "./xcep_tvt_90th.pth"
+start_model = "./xcep_tv_60th.pth"
+save_model = "./xcep_tv_90th.pth"
 
 
 class Trainer(object):
@@ -54,7 +55,8 @@ class Trainer(object):
             self.best_loss = checkpoint["best_loss"]
             self.net.load_state_dict(checkpoint["state_dict"])
         self.net = self.net.to(self.device)
-        self.criterion = torch.nn.BCEWithLogitsLoss()
+        # self.criterion = torch.nn.BCEWithLogitsLoss()
+        self.criterion = bce_dice_loss
         self.optimizer = optim.Adam(self.net.parameters(), lr=self.lr)
         self.scheduler = ReduceLROnPlateau(self.optimizer, mode="min", patience=3, verbose=True)
         self.dataloaders = {
@@ -77,6 +79,8 @@ class Trainer(object):
         targets = targets.to(self.device)
         outputs = self.net(images)
         # print(images.size(), targets.size(), outputs.size())
+        # xx = targets.detach().cpu().numpy()
+        # print(np.min(xx), np.max(xx), np.mean(xx))
         loss = self.criterion(outputs, targets)
         return loss, outputs
 
@@ -112,18 +116,18 @@ class Trainer(object):
     def start(self):
         while self.epoch < self.num_epochs:
             self.iterate(self.epoch, "train")
-            state = {
-                "epoch": self.epoch,
-                "best_loss": self.best_loss,
-                "state_dict": self.net.state_dict(),
-                # "optimizer": self.optimizer.state_dict(),
-            }
             with torch.no_grad():
                 val_loss = self.iterate(self.epoch, "val")
                 self.scheduler.step(val_loss)
             if val_loss < self.best_loss:
                 print("******** New optimal found, saving state ********")
-                state["best_loss"] = self.best_loss = val_loss
+                self.best_loss = val_loss
+                state = {
+                    "epoch": self.epoch,
+                    "best_loss": self.best_loss,
+                    "state_dict": self.net.state_dict(),
+                    # "optimizer": self.optimizer.state_dict(),
+                }
                 torch.save(state, save_model)
             self.epoch += 1
             print()
@@ -137,7 +141,11 @@ if __name__ == "__main__":
     #     activation=None,           # activation function, default is None, can choose 'sigmoid'
     #     classes=4,                 # define number of output labels
     # )
-    model = smp.Unet("xception", in_channels=3, classes=6, encoder_weights="imagenet", activation=None)
+    model = smp.Unet("xception", 
+                     in_channels=3, 
+                     classes=6, 
+                     encoder_weights="imagenet", 
+                     activation=None)
 
     trainer = Trainer(model)
     trainer.start()

@@ -18,7 +18,7 @@ classes = 6
 image_dir = "../data/labeled/images"
 label_dir = "../data/labeled/labels"
 pred_mask_dir = "../data/labeled/pred_masks"
-best_model = "./xcep_tvt_60th.pth"
+best_model = "./xcep_tv_90th.pth"
 
 
 
@@ -104,7 +104,11 @@ if __name__ == '__main__':
     #     activation=None,           # activation function, default is None, can choose 'sigmoid'
     #     classes=4,                 # define number of output labels
     # )
-    model = smp.Unet("xception", in_channels=3, classes=classes, encoder_weights=None, activation=None)
+    model = smp.Unet("xception", 
+                     in_channels=3, 
+                     classes=classes, 
+                     encoder_weights=None, 
+                     activation=None)
 
     tester = Tester(model)
     tester.start()
