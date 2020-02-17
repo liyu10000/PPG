@@ -1,6 +1,8 @@
+*.jpg
 *.png
 *.PNG
 *.pdf
+*.zip
 *.docx
 *.pptx
 *.DS_Store
