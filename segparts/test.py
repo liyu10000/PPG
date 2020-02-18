@@ -15,10 +15,16 @@ from data import generator
 
 
 classes = 6
-image_dir = "../data/labeled/images"
-label_dir = "../data/labeled/labels"
-pred_mask_dir = "../data/labeled/pred_masks"
-best_model = "./xcep_tv_90th.pth"
+# image_dir = "../data/labeled/images"
+# label_dir = "../data/labeled/labels"
+# pred_mask_dir = "../data/labeled/pred_masks"
+
+image_dir = "../data/Hi-Resx2"
+label_dir = None
+pred_mask_dir = "../data/labeled/pred_masks/Hi-Resx2"
+
+os.makedirs(pred_mask_dir, exist_ok=True)
+best_model = "./exp_0216/xcep_tv_aug_90th.pth"
 
 
 
@@ -72,9 +78,8 @@ class Tester(object):
                                     num_workers=self.num_workers,
                                     )
         
-    def forward(self, images, targets):
+    def forward(self, images):
         images = images.to(self.device)
-        targets = targets.to(self.device)
         outputs = self.net(images)
         if self.classes > 1:
             probs = F.softmax(outputs, dim=1)
@@ -90,11 +95,10 @@ class Tester(object):
     def start(self):
         with torch.no_grad():
             for i, batch in enumerate(self.dataloader):
-                names, images, targets = batch
-                probs = self.forward(images, targets)
+                names, images, _ = batch
+                probs = self.forward(images)
                 self.save(names, probs)
                 print("Finished batch {}:".format(i), names)
-                break
 
 
 if __name__ == '__main__':

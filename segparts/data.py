@@ -6,6 +6,7 @@ import pandas as pd
 from tqdm import tqdm
 from torch.utils.data import DataLoader, Dataset, random_split
 from albumentations import HorizontalFlip, ShiftScaleRotate, Normalize, Resize, Compose, GaussNoise
+from albumentations import RandomContrast, RandomBrightness, RandomBrightnessContrast
 from albumentations.pytorch import ToTensor
 
 
@@ -65,8 +66,10 @@ def scan_files(directory, prefix=None, postfix=None):
 
 def get_label_dict(image_dir, label_dir):
     images = os.listdir(image_dir)
-    labels = scan_files(label_dir, postfix='.csv')
     label_dict = {os.path.splitext(f)[0]:{'path':os.path.join(image_dir, f)} for f in images}
+    if label_dir is None:
+        return label_dict
+    labels = scan_files(label_dir, postfix='.csv')
     has_labels = set() # store image names with labels
     for f in labels:
         base_f = os.path.basename(f)
@@ -143,12 +146,15 @@ def make_mask(label_info, class_index, factor, direction, pad, W=640, H=480):
 
 def get_transforms(phase, mean, std):
     list_transforms = []
-    # if phase == "train":
-    #     list_transforms.extend(
-    #         [
-    #             HorizontalFlip(p=0.5), # only horizontal flip as of now
-    #         ]
-    #     )
+    if phase == "train":
+        list_transforms.extend(
+            [
+                HorizontalFlip(p=0.5), # only horizontal flip as of now
+                # RandomContrast(p=0.5),
+                # RandomBrightness(p=0.5),
+                RandomBrightnessContrast(p=0.5),
+            ]
+        )
     list_transforms.extend(
         [
             Normalize(mean=mean, std=std, p=1),
@@ -190,6 +196,7 @@ class PPGDataset(Dataset):
         self.names = list(label_dict.keys())
         self.label_dict = label_dict
         self.class_index = class_index
+        self.classes = len(set(class_index.values()))
         self.mean = mean
         self.std = std
         self.phase = phase
@@ -200,8 +207,12 @@ class PPGDataset(Dataset):
         label_info = self.label_dict[name]
         img = cv2.imread(label_info["path"])
         img, factor, direction, pad = resize_with_pad(img)
-        mask = make_mask(label_info, self.class_index, factor, direction, pad)
-
+        if self.phase == "test":
+            H, W, _ = img.shape
+            C = self.classes
+            mask = np.zeros((H, W, C))
+        else:
+            mask = make_mask(label_info, self.class_index, factor, direction, pad)
         augmented = self.transforms(image=img, mask=mask)
         img = augmented['image']
         mask = augmented['mask'] # 1xHxWxC
@@ -228,11 +239,11 @@ def generator(
     keys.sort()
     random.Random(seed).shuffle(keys) # shuffle with seed, so that yielding same sampling
     if phase == "train":
-        sample_keys = keys[4:20] + keys[28:]
+        sample_keys = keys[:16] + keys[24:]
     elif phase == "val":
-        sample_keys = keys[20:28]
+        sample_keys = keys[16:24]
     else:
-        sample_keys = keys[:4]
+        sample_keys = keys
     # sample_keys = keys  # use all data for train & val
     print(phase, sample_keys)
     sample_label_dict = {key:label_dict[key] for key in sample_keys}
