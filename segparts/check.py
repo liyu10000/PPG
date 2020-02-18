@@ -8,6 +8,8 @@ import matplotlib.pyplot as plt
 def bin_mask(mask):
     """ Check which side of mask contains bigger segments, combine the less to more.
     """
+    if mask.shape[0] == 1 or mask.shape[2] == 1:
+        return mask
     if mask.shape[2] == 6:
         mask = mask.transpose((2, 0, 1))
     
@@ -22,14 +24,14 @@ def bin_mask(mask):
     return mask
 
 
-def plt_mask(mask):
-    """ plot mask with 3 or 6 channels
+def plt_mask(mask, save_name=None):
+    """ plot mask with 1 or 3 or 6 channels
     """
-    if mask.shape[2] == 6 or mask.shape[2] == 3:
+    if mask.shape[2] == 6 or mask.shape[2] == 3 or mask.shape[2] == 1:
         mask = mask.transpose((2, 0, 1))
 
     if mask.shape[0] == 6:
-        plt.figure(1, figsize=(18, 22))
+        f = plt.figure(1, figsize=(18, 22))
         classes = ['STBD TS', 'STBD BT', 'STBD VS', 'PS TS', 'PS BT', 'PS VS']
         for i in range(3):
             plt.subplot(3, 2, 2*i+1)
@@ -42,8 +44,8 @@ def plt_mask(mask):
             plt.xticks([])
             plt.yticks([])
             plt.title(classes[i+3], fontsize=40)
-    else:
-        plt.figure(1, figsize=(9, 22))
+    elif mask.shape[0] == 3:
+        f = plt.figure(1, figsize=(9, 22))
         classes = ['TS', 'BT', 'VS']
         for i in range(3):
             plt.subplot(3, 1, i+1)
@@ -51,7 +53,19 @@ def plt_mask(mask):
             plt.xticks([])
             plt.yticks([])
             plt.title(classes[i], fontsize=40)
-    plt.show()
+    else:
+        f = plt.figure(1, figsize=(9, 7))
+        classes = ['SHIP']
+        i = 0
+        plt.imshow(mask[i, :, :], "gray")
+        plt.xticks([])
+        plt.yticks([])
+        plt.title(classes[i], fontsize=40)
+    if save_name is not None:
+        plt.savefig(save_name)
+    f.clear()
+    plt.close(f)
+    # plt.show()
 
 
 def parse_train_log(train_log):
