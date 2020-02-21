@@ -6,6 +6,8 @@
 *.docx
 *.pptx
 *.DS_Store
+*.pyc
+*.ipynb
 *.ipynb_checkpoints/
 __pycache__/
 
