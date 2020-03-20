@@ -45,8 +45,8 @@ def calc_loss(image_dir, label_dir, pred_mask_dir, process_fn, dtype, loss_fn):
         img, factor, direction, pad = resize_with_pad(img)
 
         mask = make_mask(label_info, class_index, factor, direction, pad)
-        mask = mask.astype(dtype)
-        side, mask = get_sidemask(mask)
+        mask = mask.astype(dtype) # C, H, W
+        side, mask = get_sidemask(mask) # H, W, 3
         # print(img.shape, mask.shape)
 
         pred_mask = np.load(os.path.join(pred_mask_dir, name+'.npy'))
@@ -129,8 +129,13 @@ if __name__ == '__main__':
     # print(val_ious)
 
     # calculate bce loss for each side, each part
-    image_dir = "../data/labeled/images"
-    label_dir = "../data/labeled/labels"
-    pred_mask_dir = "../data/labeled/pred_masks/exp_0304/6classes/xcep_tv_90th"
+    # image_dir = "../data/labeled/images"
+    # label_dir = "../data/labeled/labels"
+    # pred_mask_dir = "../data/labeled/pred_masks/exp_0304/6classes/xcep_tv_90th"
+
+    image_dir = "../data/Segmentation_Test_Set/images"
+    label_dir = "../data/Segmentation_Test_Set/labels"
+    pred_mask_dir = "../data/Segmentation_Test_Set/pred_masks"
+
     calc_loss(image_dir, label_dir, pred_mask_dir, process_mask, np.float32, nn.BCEWithLogitsLoss())
     calc_loss(image_dir, label_dir, pred_mask_dir, process_mask, np.uint8, iou_pytorch)

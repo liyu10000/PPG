@@ -17,14 +17,22 @@ from data import generator
 classes = 6
 # image_dir = "../data/labeled/images"
 # label_dir = "../data/labeled/labels"
-# pred_mask_dir = "../data/labeled/pred_masks"
+# pred_mask_dir = "../data/labeled/pred_masks/xcep_tv_90th"
 
-image_dir = "../data/Hi-Resx2"
+# image_dir = "../data/Hi-Resx2"
+# label_dir = None
+# pred_mask_dir = "../data/labeled/pred_masks/Hi-Resx2"
+
+# image_dir = "../data/Segmentation_Test_Set/images"
+# label_dir = "../data/Segmentation_Test_Set/labels"
+# pred_mask_dir = "../data/Segmentation_Test_Set/pred_masks"
+
+image_dir = "../data/Segmentation_Test_Set/imagestest"
 label_dir = None
-pred_mask_dir = "../data/labeled/pred_masks/Hi-Resx2"
+pred_mask_dir = "../data/Segmentation_Test_Set/pred_maskstest"
 
 os.makedirs(pred_mask_dir, exist_ok=True)
-best_model = "./exp_0216/xcep_tv_aug_90th.pth"
+best_model = "./exp_0304/6classes/xcep_tv_90th.pth"
 
 
 

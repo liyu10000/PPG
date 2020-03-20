@@ -5,7 +5,58 @@ import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
 from skimage.filters import threshold_otsu
+from data import scan_files, get_label_dict, resize_with_pad, make_mask
 
+
+def get_lowerbound(mask):  # usually the second mask
+    """ Get lower bound of mask, input should be 2d: H x W
+    """
+    H, W = mask.shape
+    line_mask = np.sum(mask, axis=0) > 0
+    bound = np.zeros((np.sum(line_mask), 2))
+    b = 0
+    for i in range(W):
+        if line_mask[i]:
+            j = H - 1 - np.argmax(mask[:, i][::-1])
+            # if j < H - 3: # remove bound on image border
+            bound[b][0] = i
+            bound[b][1] = j
+            b += 1
+    return bound
+
+# def finetune_lowerbound(bound, lowermask):
+#     H, W = lowermask.shape
+#     line_mask = np.sum(lowermask, axis=0) > 0
+#     bound = [bound[i] for ]
+
+def get_upperbound(mask):  # usually the second mask
+    """ Get upper bound of mask, input should be 2d: H x W
+    """
+    H, W = mask.shape
+    line_mask = np.sum(mask, axis=0) > 0
+    bound = np.zeros((np.sum(line_mask), 2))
+    b = 0
+    for i in range(W):
+        if line_mask[i]:
+            j = np.argmax(mask[:, i])
+            # if j > 2: # remove bound on image border
+            bound[b][0] = i
+            bound[b][1] = j
+            b += 1
+    return bound
+
+def remove_outliers(data):
+    y = data[:, 1]
+    threshold = 3
+    mean = np.mean(y)
+    std = np.std(y)
+    
+    data_new = []
+    for i,d in enumerate(y):
+        z_score= (d - mean) / std 
+        if abs(z_score) < threshold:
+            data_new.append(data[i, :])
+    return np.array(data_new)
 
 def bin_mask(mask):
     """ Check which side of mask contains bigger segments, combine the less to more.
@@ -79,19 +130,16 @@ def img_open(img):
     img = cv2.dilate(img, kernel, iterations=3)
     return img
 
-def img_close(img):
+def img_close(img, i):
     kernel_size = (5, 5)
     kernel = np.ones(kernel_size, np.uint8)
-    img = cv2.dilate(img, kernel, iterations=1)
-    img = cv2.erode(img, kernel, iterations=1)
-    return img
-
-def img_close2(img):
-    kernel_size = (5, 5)
-    kernel = np.ones(kernel_size, np.uint8)
-    img = cv2.dilate(img, kernel, iterations=1)
-    img = cv2.erode(img, kernel, iterations=2)
-    img = cv2.dilate(img, kernel, iterations=1)
+    if i < 0: # standard close
+        img = cv2.dilate(img, kernel, iterations=1)
+        img = cv2.erode(img, kernel, iterations=1)
+    else: # close and open
+        img = cv2.dilate(img, kernel, iterations=1)
+        img = cv2.erode(img, kernel, iterations=2)
+        img = cv2.dilate(img, kernel, iterations=1)
     return img
 
 def combine_contours(contours):
@@ -146,16 +194,61 @@ def get_3channelmask(mask):
     else:
         return mask[:, :, :3]
 
+def fill_mask_up(mask, upperbound, lowerbound):
+    """
+    :param mask: H, W
+    :param upperbound: the bound to fill up to, the lowerbound of upper mask
+    :param lowerbound: the bound to start with, the lowerbound of current mask
+    """
+    upperleft, upperright = np.min(upperbound[:, 0]), np.max(upperbound[:, 0])
+    lowerleft, lowerright = np.min(lowerbound[:, 0]), np.max(lowerbound[:, 0])
+    upperleft, upperright = int(upperleft), int(upperright)
+    lowerleft, lowerright = int(lowerleft), int(lowerright)
+
+    mask_new = np.zeros_like(mask, dtype=mask.dtype)
+    mask_new[:] = mask
+    m = np.max(mask)
+
+    H, W = mask.shape
+    for w in range(W):
+        if upperleft <= w <= upperright and lowerleft <= w <= lowerright:
+            try:
+                i = np.where(upperbound[:, 0] == w)
+                j = np.where(lowerbound[:, 0] == w)
+                i = int(upperbound[i[0][0], 1])
+                j = int(lowerbound[j[0][0], 1])
+                mask_new[i : j, w] = m
+            except:
+                pass
+
+    return mask_new
+
 def process_mask(mask):
     mask2 = np.zeros_like(mask)
     mask = mask.astype(np.float32)
     for i in range(3):
         img = mask[:, :, i]
         if np.sum(img) > 0:
-            img = img_close2(img)
+            img = img_close(img, i)
             img = contour(img)
             # img = contour_convex(img)
         mask2[:, :, i] = img
+
+    # fill holes vertically within each mask
+    for i in range(1, 3):
+        if np.sum(mask2[:, :, i]) > 0:
+            upperbound = get_upperbound(mask2[:, :, i])
+            lowerbound = get_lowerbound(mask2[:, :, i])
+            newm = fill_mask_up(mask2[:, :, i], upperbound, lowerbound)
+            mask2[:, :, i] = newm
+
+    # fill the third part up to the lowerbound of second part
+    if np.sum(mask2[:, :, 1]) > 0 and np.sum(mask2[:, :, 2]) > 0:
+        upperbound = get_lowerbound(mask2[:, :, 1])
+        lowerbound = get_lowerbound(mask2[:, :, 2])
+        newm = fill_mask_up(mask2[:, :, 2], upperbound, lowerbound)
+        mask2[:, :, 2] = newm
+
     return mask2
 
 def plot_color(img):
@@ -181,3 +274,77 @@ def plot_mask_on_img(img, mask, save_name=None):
     else:
         # img = cv2.cvtColor(img, cv2.COLOR_RGB2BGR)
         cv2.imwrite(save_name, img)
+
+
+if __name__ == '__main__':
+    # image_dir = "../data/labeled/images"
+    # label_dir = "../data/labeled/labels"
+    # pred_mask_dir = "../data/labeled/pred_masks/exp_0304/6classes/xcep_tv_90th"
+    # save_dir = './exp_0304/6classes/xcep_tv_90th_processed3'
+
+    # image_dir = "../data/Hi-Resx2"
+    # label_dir = None
+    # pred_mask_dir = "../data/labeled/pred_masks/exp_0304/6classes/Hi-Resx2"
+    # save_dir = './exp_0304/6classes/Hi-Resx2_processed3'
+
+    # image_dir = "../data/Segmentation_Test_Set/images"
+    # label_dir = "../data/Segmentation_Test_Set/labels"
+    # pred_mask_dir = "../data/Segmentation_Test_Set/pred_masks"
+    # save_dir = "./exp_0304/6classes/Segmentation_Test_Set/pred_masks"
+
+    image_dir = "../data/Segmentation_Test_Set/imagestest"
+    label_dir = None
+    pred_mask_dir = "../data/Segmentation_Test_Set/pred_maskstest"
+    save_dir = "./exp_0304/6classes/Segmentation_Test_Set/pred_maskstest"
+
+    os.makedirs(save_dir, exist_ok=True)
+    label_dict = get_label_dict(image_dir, label_dir)
+    class_index = {'STBD TS':0, 'STBD BT':1, 'STBD VS': 2, 'PS TS':3, 'PS BT':4, 'PS VS':5}
+    # class_index = {'STBD TS':0, 'STBD BT':1, 'STBD VS': 2, 'PS TS':0, 'PS BT':1, 'PS VS':2}
+    # name = 'V3 13HR'
+
+    # collect names with test result
+    names = [os.path.splitext(f)[0] for f in os.listdir(pred_mask_dir) 
+                                        if f.endswith('.npy')]
+
+    for name in names:
+        print('processing', name)
+        label_info = label_dict[name]
+        img = cv2.imread(label_info["path"])
+        img, factor, direction, pad = resize_with_pad(img)
+        if label_dir is not None:
+            mask = make_mask(label_info, class_index, factor, direction, pad)
+            mask = mask.astype(np.uint8)
+            # print(img.shape, mask.shape)
+
+        pred_mask = np.load(os.path.join(pred_mask_dir, name+'.npy'))
+        pred_mask = pred_mask > 0.5  # convert to binary mask
+        pred_mask = pred_mask.astype(np.uint8)
+        if len(set(class_index.values())) == 6:
+            pred_mask = bin_mask(pred_mask)
+        # print(pred_mask.shape)
+
+        # # save img and mask
+        # cv2.imwrite(os.path.join(save_dir, name+'.jpg'), img)
+        # if label_dir is not None:
+        #     plot_mask(mask, os.path.join(save_dir, name+'_true.jpg'))
+        # plot_mask(pred_mask, os.path.join(save_dir, name+'_pred.jpg'))
+
+        # put mask on img
+        # img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
+        if label_dir is not None:
+            mask = get_3channelmask(mask)
+            plot_mask_on_img(img, mask, os.path.join(save_dir, name+'_true.jpg'))
+        pred_mask = get_3channelmask(pred_mask)
+        pred_mask = process_mask(pred_mask)
+        plot_mask_on_img(img, pred_mask, os.path.join(save_dir, name+'_pred.jpg'))
+        pred_mask = cv2.cvtColor(pred_mask, cv2.COLOR_RGB2BGR)
+        cv2.imwrite(os.path.join(save_dir, name+'_pred_mask.jpg'), pred_mask)
+
+        # break
+
+        # img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
+        # plt.imshow(img)
+        # plt.xticks([])
+        # plt.yticks([])
+        # plt.show()
