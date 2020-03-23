@@ -13,6 +13,8 @@
 *.ipynb_checkpoints/
 __pycache__/
 
+*.pth
+
 /data
 /meetings
 /papers
