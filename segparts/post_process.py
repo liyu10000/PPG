@@ -6,7 +6,7 @@ import pandas as pd
 import matplotlib.pyplot as plt
 from skimage.filters import threshold_otsu
 from data import scan_files, get_label_dict, resize_with_pad, make_mask
-
+from config import Config
 
 def get_lowerbound(mask):  # usually the second mask
     """ Get lower bound of mask, input should be 2d: H x W
@@ -57,6 +57,21 @@ def remove_outliers(data):
         if abs(z_score) < threshold:
             data_new.append(data[i, :])
     return np.array(data_new)
+
+
+def refine_mask(probability, threshold, min_size):
+    '''Post processing of each predicted mask, components with lesser number of pixels
+    than `min_size` are ignored'''
+    mask = cv2.threshold(probability, threshold, 1, cv2.THRESH_BINARY)[1]
+    num_component, component = cv2.connectedComponents(mask.astype(np.uint8))
+    predictions = np.zeros((256, 1600), np.float32)
+    num = 0
+    for c in range(1, num_component):
+        p = (component == c)
+        if p.sum() > min_size:
+            predictions[p] = 1
+            num += 1
+    return predictions, num
 
 def bin_mask(mask):
     """ Check which side of mask contains bigger segments, combine the less to more.
@@ -277,30 +292,22 @@ def plot_mask_on_img(img, mask, save_name=None):
 
 
 if __name__ == '__main__':
-    # image_dir = "../data/labeled/images"
-    # label_dir = "../data/labeled/labels"
-    # pred_mask_dir = "../data/labeled/pred_masks/exp_0304/6classes/xcep_tv_90th"
-    # save_dir = './exp_0304/6classes/xcep_tv_90th_processed3'
+    cfg = Config.parse()
 
-    # image_dir = "../data/Hi-Resx2"
-    # label_dir = None
-    # pred_mask_dir = "../data/labeled/pred_masks/exp_0304/6classes/Hi-Resx2"
-    # save_dir = './exp_0304/6classes/Hi-Resx2_processed3'
-
-    image_dir = "../data/Segmentation_Test_Set/images"
-    label_dir = "../data/Segmentation_Test_Set/labels"
-    pred_mask_dir = "../data/Segmentation_Test_Set/pred_masks/exp_0322"
-    save_dir = "../data/Segmentation_Test_Set/plot_masks/exp_0322"
-
-    # image_dir = "../data/Segmentation_Test_Set/imagestest"
-    # label_dir = None
-    # pred_mask_dir = "../data/Segmentation_Test_Set/pred_maskstest"
-    # save_dir = "../data/Segmentation_Test_Set/pred_maskstest/exp_0322"
+    image_dir = cfg.test_image_dir
+    label_dir = cfg.test_label_dir
+    pred_mask_dir = cfg.pred_mask_dir
+    save_dir = cfg.plot_mask_dir
 
     os.makedirs(save_dir, exist_ok=True)
     label_dict = get_label_dict(image_dir, label_dir)
-    # class_index = {'STBD TS':0, 'STBD BT':1, 'STBD VS': 2, 'PS TS':3, 'PS BT':4, 'PS VS':5}
-    class_index = {'STBD TS':0, 'STBD BT':1, 'STBD VS': 2, 'PS TS':0, 'PS BT':1, 'PS VS':2}
+    classes = cfg.classes
+    if classes == 6:
+        class_index = {'STBD TS':0, 'STBD BT':1, 'STBD VS': 2, 'PS TS':3, 'PS BT':4, 'PS VS':5}
+    elif classes == 3:
+        class_index = {'STBD TS':0, 'STBD BT':1, 'STBD VS': 2, 'PS TS':0, 'PS BT':1, 'PS VS':2}
+    else:  # classes = 1
+        class_index = {'STBD TS':0, 'STBD BT':0, 'STBD VS': 0, 'PS TS':0, 'PS BT':0, 'PS VS':0}
     # name = 'V3 13HR'
 
     # collect names with test result

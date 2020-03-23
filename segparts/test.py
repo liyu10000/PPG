@@ -11,58 +11,29 @@ from matplotlib import pyplot as plt
 import torch
 import torch.nn.functional as F
 
+from config import Config
 from data import generator
 
 
-classes = 6
-# image_dir = "../data/labeled/images"
-# label_dir = "../data/labeled/labels"
-# pred_mask_dir = "../data/labeled/pred_masks/xcep_tv_90th"
-
-# image_dir = "../data/Hi-Resx2"
-# label_dir = None
-# pred_mask_dir = "../data/labeled/pred_masks/Hi-Resx2"
-
-image_dir = "../data/Segmentation_Test_Set/images"
-label_dir = "../data/Segmentation_Test_Set/labels"
-pred_mask_dir = "../data/Segmentation_Test_Set/pred_masks/exp_0322"
-
-# image_dir = "../data/Segmentation_Test_Set/imagestest"
-# label_dir = None
-# pred_mask_dir = "../data/Segmentation_Test_Set/pred_maskstest/exp_0322"
-
-os.makedirs(pred_mask_dir, exist_ok=True)
-best_model = "./xcep_90th.pth"
-
-
-
-def post_process(probability, threshold, min_size):
-    '''Post processing of each predicted mask, components with lesser number of pixels
-    than `min_size` are ignored'''
-    mask = cv2.threshold(probability, threshold, 1, cv2.THRESH_BINARY)[1]
-    num_component, component = cv2.connectedComponents(mask.astype(np.uint8))
-    predictions = np.zeros((256, 1600), np.float32)
-    num = 0
-    for c in range(1, num_component):
-        p = (component == c)
-        if p.sum() > min_size:
-            predictions[p] = 1
-            num += 1
-    return predictions, num
+cfg = Config.parse()
 
 
 class Tester(object):
     '''This class takes care of testing of our model'''
-    def __init__(self, model):
-        self.num_workers = 4
-        self.batch_size = 8
-        self.pred_mask_dir = pred_mask_dir
+    def __init__(self, model, cfg):
+        self.num_workers = cfg.num_workers
+        self.batch_size = cfg.test_batch_size
+        self.image_dir = cfg.test_image_dir
+        self.label_dir = cfg.test_label_dir if cfg.test_label_dir != 'None' else None
+        self.pred_mask_dir = cfg.pred_mask_dir
+        os.makedirs(self.pred_mask_dir, exist_ok=True)
         self.device = torch.device("cuda:0")
         torch.set_default_tensor_type("torch.cuda.FloatTensor")
         torch.backends.cudnn.benchmark = True
-        self.classes = classes
+        self.classes = cfg.classes
         # load weights
         self.net = model
+        best_model = cfg.model_path
         if not os.path.isfile(best_model):
             print('*****WARNING*****: {} does not exist.'.format(best_model))
             sys.exit()
@@ -74,10 +45,10 @@ class Tester(object):
         self.net.eval()
         # initiate data loader
         self.dataloader = generator(
-                                    image_dir=image_dir,
-                                    label_dir=label_dir,
+                                    image_dir=self.image_dir,
+                                    label_dir=self.label_dir,
                                     phase="test",
-                                    classes=classes,
+                                    classes=self.classes,
                                     # mean=(0.400, 0.413, 0.481),   # statistics from custom dataset
                                     # std=(0.286, 0.267, 0.286),
                                     mean=(0.415, 0.425, 0.496),   # statistics from custom dataset
@@ -119,9 +90,9 @@ if __name__ == '__main__':
     # )
     model = smp.Unet("xception", 
                      in_channels=3, 
-                     classes=classes, 
+                     classes=cfg.classes, 
                      encoder_weights=None, 
                      activation=None)
 
-    tester = Tester(model)
+    tester = Tester(model, cfg)
     tester.start()

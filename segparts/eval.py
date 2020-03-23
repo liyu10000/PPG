@@ -8,6 +8,7 @@ import torch.nn as nn
 import torch.nn.functional as F
 from data import scan_files, get_label_dict, resize_with_pad, make_mask
 from post_process import bin_mask, process_mask
+from config import Config
 
 
 def get_sidemask(mask):
@@ -129,13 +130,11 @@ if __name__ == '__main__':
     # print(val_ious)
 
     # calculate bce loss for each side, each part
-    # image_dir = "../data/labeled/images"
-    # label_dir = "../data/labeled/labels"
-    # pred_mask_dir = "../data/labeled/pred_masks/exp_0304/6classes/xcep_tv_90th"
+    cfg = Config.parse()
 
-    image_dir = "../data/Segmentation_Test_Set/images"
-    label_dir = "../data/Segmentation_Test_Set/labels"
-    pred_mask_dir = "../data/Segmentation_Test_Set/pred_masks/exp_0322"
+    image_dir = cfg.test_image_dir
+    label_dir = cfg.test_label_dir
+    pred_mask_dir = cfg.pred_mask_dir
 
     calc_loss(image_dir, label_dir, pred_mask_dir, process_mask, np.float32, nn.BCEWithLogitsLoss())
     calc_loss(image_dir, label_dir, pred_mask_dir, process_mask, np.uint8, iou_pytorch)

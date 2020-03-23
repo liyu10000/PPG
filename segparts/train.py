@@ -12,12 +12,14 @@ import torch
 import torch.optim as optim
 from torch.optim.lr_scheduler import ReduceLROnPlateau
 
+from config import Config
 from data import generator
 from loss import bce_dice_loss
 from log import Meter
 
 warnings.filterwarnings("ignore")
-seed = 42
+cfg = Config.parse()
+seed = cfg.seed
 random.seed(seed)
 os.environ["PYTHONHASHSEED"] = str(seed)
 np.random.seed(seed)
@@ -26,30 +28,25 @@ torch.backends.cudnn.deterministic = True
 torch.backends.cudnn.benchmark = True
 
 
-classes = 6
-image_dir = "../data/labeled/images"
-label_dir = "../data/labeled/labels"
-start_model = "./xcep_90th.pth"
-save_model = "./xcep_90th.pth"
-
-
 class Trainer(object):
     '''This class takes care of training and validation of our model'''
-    def __init__(self, model):
-        self.num_workers = 8
-        self.batch_size = {"train": 4, "val": 4}
-        self.accumulation_steps =  32 // self.batch_size['train']
-        self.lr = 1e-4
-        self.resume = True
-        self.num_epochs = 90
-        self.epoch = 60 # the epoch to start counting
+    def __init__(self, model, cfg):
+        self.num_workers = cfg.num_workers
+        self.batch_size = {"train": cfg.train_batch_size, "val": cfg.val_batch_size}
+        self.accumulation_steps =  cfg.accumulation_steps // self.batch_size['train']
+        self.lr = cfg.lr
+        self.resume = cfg.resume
+        self.num_epochs = cfg.num_epochs
+        self.epoch = cfg.resume_from # the epoch to start counting
+        self.start_model = cfg.model_path
+        self.save_model = cfg.model_path
         self.best_loss = float("inf")
         self.phases = ["train", "val"]
         self.device = torch.device("cuda:0")
         torch.set_default_tensor_type("torch.cuda.FloatTensor")
         self.net = model
         if self.resume:
-            checkpoint = torch.load(start_model)
+            checkpoint = torch.load(self.start_model)
             # self.epoch = checkpoint["epoch"] + 1  # it may not be the last epoch being runned
             self.best_loss = checkpoint["best_loss"]
             self.net.load_state_dict(checkpoint["state_dict"])
@@ -63,7 +60,7 @@ class Trainer(object):
                 image_dir=image_dir,
                 label_dir=label_dir,
                 phase=phase,
-                classes=classes,
+                classes=cfg.classes,
                 # mean=(0.485, 0.456, 0.406), # statistics from ImageNet
                 # std=(0.229, 0.224, 0.225),
                 # mean=(0.400, 0.413, 0.481),   # statistics from custom dataset
@@ -130,7 +127,7 @@ class Trainer(object):
                     "state_dict": self.net.state_dict(),
                     # "optimizer": self.optimizer.state_dict(),
                 }
-                torch.save(state, save_model)
+                torch.save(state, self.save_model)
             self.epoch += 1
             print()
 
@@ -145,10 +142,10 @@ if __name__ == "__main__":
     # )
     model = smp.Unet("xception", 
                      in_channels=3, 
-                     classes=classes, 
+                     classes=cfg.classes, 
                      encoder_weights="imagenet", 
                      activation=None)
 
-    trainer = Trainer(model)
+    trainer = Trainer(model, cfg)
     trainer.start()
 
