@@ -1,3 +1,4 @@
+*.txt
 *.csv
 *.jpg
 *.png
@@ -15,3 +16,4 @@ __pycache__/
 /data
 /meetings
 /papers
+/topology_aware_delineation
