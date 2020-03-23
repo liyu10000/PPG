@@ -15,7 +15,7 @@ from config import Config
 from data import generator
 
 
-cfg = Config.parse()
+cfg = Config().parse()
 
 
 class Tester(object):

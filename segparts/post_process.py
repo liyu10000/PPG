@@ -5,8 +5,10 @@ import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
 from skimage.filters import threshold_otsu
+
 from data import scan_files, get_label_dict, resize_with_pad, make_mask
 from config import Config
+
 
 def get_lowerbound(mask):  # usually the second mask
     """ Get lower bound of mask, input should be 2d: H x W
@@ -292,7 +294,7 @@ def plot_mask_on_img(img, mask, save_name=None):
 
 
 if __name__ == '__main__':
-    cfg = Config.parse()
+    cfg = Config().parse()
 
     image_dir = cfg.test_image_dir
     label_dir = cfg.test_label_dir

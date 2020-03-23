@@ -2,6 +2,7 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 from torch.autograd import Function
+import matplotlib.pyplot as plt
 
 classes = 6
 
@@ -65,3 +66,47 @@ def dice_loss(inputs, targets):
 
 def bce_dice_loss(inputs, targets):
     return nn.BCEWithLogitsLoss()(inputs, targets) + dice_loss(inputs, targets)
+
+
+def parse_train_log(train_log):
+    epochs = []
+    train_losses, val_losses = [], []
+    train_ious, val_ious = [], []
+    with open(train_log, 'r') as f:
+        lines = f.readlines()
+        i = 0
+        while i < len(lines):
+            line = lines[i]
+            if line.startswith('Starting') and 'train' in line:  # train starts
+                tokens = line.strip().split()
+                epoch = int(tokens[2])
+                epochs.append(epoch)  # number of epochs
+
+                i += 1
+                line = lines[i]
+                tokens = line.strip().split()
+                loss = float(tokens[1])
+                iou = float(tokens[4])
+                train_losses.append(loss)  # loss
+                train_ious.append(iou)  # iou
+            if line.startswith('Starting') and 'val' in line:  # val starts
+                i += 1
+                line = lines[i]
+                tokens = line.strip().split()
+                loss = float(tokens[1])
+                iou = float(tokens[4])
+                val_losses.append(loss)  # loss
+                val_ious.append(iou)  # iou
+            i += 1
+    return epochs, train_losses, val_losses, train_ious, val_ious
+
+
+def plot_train_log(epochs, train_metric, val_metric):
+    # plot trend
+    fig, ax = plt.subplots(1, 1, figsize=(10,10))
+
+    ax.grid()
+    ax.scatter(epochs, train_metric, marker='.', color='black')
+    ax.scatter(epochs, val_metric, marker='s', color='red')
+
+    plt.show()

@@ -8,9 +8,10 @@ from torch.utils.data import DataLoader, Dataset, random_split
 from albumentations import HorizontalFlip, ShiftScaleRotate, Normalize, Resize, Compose, GaussNoise
 from albumentations import RandomContrast, RandomBrightness, RandomBrightnessContrast, ToGray
 from albumentations.pytorch import ToTensor
+from config import Config
 
-
-seed = 42
+cfg = Config().parse()
+seed = cfg.seed
 random.seed(seed)
 os.environ["PYTHONHASHSEED"] = str(seed)
 np.random.seed(seed)
@@ -226,6 +227,7 @@ def generator(
             label_dir,
             phase,
             classes,
+            val_interval=[0,12],
             mean=None,
             std=None,
             shuffle=True,
@@ -242,10 +244,11 @@ def generator(
     keys = list(label_dict.keys())
     keys.sort()
     random.Random(seed).shuffle(keys) # shuffle with seed, so that yielding same sampling
+    val_interval1, val_interval2 = val_interval
     if phase == "train":
-        sample_keys = keys[:24] + keys[36:]
+        sample_keys = keys[:val_interval1] + keys[val_interval2:]
     elif phase == "val":
-        sample_keys = keys[24:36]
+        sample_keys = keys[val_interval1:val_interval2]
     else:
         sample_keys = keys
     # sample_keys = keys  # use all data for train & val

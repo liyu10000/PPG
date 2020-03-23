@@ -18,7 +18,7 @@ from loss import bce_dice_loss
 from log import Meter
 
 warnings.filterwarnings("ignore")
-cfg = Config.parse()
+cfg = Config().parse()
 seed = cfg.seed
 random.seed(seed)
 os.environ["PYTHONHASHSEED"] = str(seed)
@@ -31,17 +31,27 @@ torch.backends.cudnn.benchmark = True
 class Trainer(object):
     '''This class takes care of training and validation of our model'''
     def __init__(self, model, cfg):
+        self.image_dir = cfg.image_dir
+        self.label_dir = cfg.label_dir
+        self.classes = cfg.classes
         self.num_workers = cfg.num_workers
         self.batch_size = {"train": cfg.train_batch_size, "val": cfg.val_batch_size}
         self.accumulation_steps =  cfg.accumulation_steps // self.batch_size['train']
         self.lr = cfg.lr
-        self.resume = cfg.resume
+        self.resume = True if cfg.resume == 'True' else False
         self.num_epochs = cfg.num_epochs
         self.epoch = cfg.resume_from # the epoch to start counting
         self.start_model = cfg.model_path
         self.save_model = cfg.model_path
         self.best_loss = float("inf")
         self.phases = ["train", "val"]
+        self.val_interval = []
+        if self.num_epochs == 30:
+            self.val_interval = [0, 12]
+        elif self.num_epochs == 60:
+            self.val_interval = [12, 24]
+        else:
+            self.val_interval = [24, 36]
         self.device = torch.device("cuda:0")
         torch.set_default_tensor_type("torch.cuda.FloatTensor")
         self.net = model
@@ -57,10 +67,11 @@ class Trainer(object):
         self.scheduler = ReduceLROnPlateau(self.optimizer, mode="min", patience=3, verbose=True)
         self.dataloaders = {
             phase: generator(
-                image_dir=image_dir,
-                label_dir=label_dir,
+                image_dir=self.image_dir,
+                label_dir=self.label_dir,
                 phase=phase,
-                classes=cfg.classes,
+                classes=self.classes,
+                val_interval=self.val_interval,
                 # mean=(0.485, 0.456, 0.406), # statistics from ImageNet
                 # std=(0.229, 0.224, 0.225),
                 # mean=(0.400, 0.413, 0.481),   # statistics from custom dataset
