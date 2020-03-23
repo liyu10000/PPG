@@ -287,20 +287,20 @@ if __name__ == '__main__':
     # pred_mask_dir = "../data/labeled/pred_masks/exp_0304/6classes/Hi-Resx2"
     # save_dir = './exp_0304/6classes/Hi-Resx2_processed3'
 
-    # image_dir = "../data/Segmentation_Test_Set/images"
-    # label_dir = "../data/Segmentation_Test_Set/labels"
-    # pred_mask_dir = "../data/Segmentation_Test_Set/pred_masks"
-    # save_dir = "./exp_0304/6classes/Segmentation_Test_Set/pred_masks"
+    image_dir = "../data/Segmentation_Test_Set/images"
+    label_dir = "../data/Segmentation_Test_Set/labels"
+    pred_mask_dir = "../data/Segmentation_Test_Set/pred_masks/exp_0322"
+    save_dir = "../data/Segmentation_Test_Set/plot_masks/exp_0322"
 
-    image_dir = "../data/Segmentation_Test_Set/imagestest"
-    label_dir = None
-    pred_mask_dir = "../data/Segmentation_Test_Set/pred_maskstest"
-    save_dir = "./exp_0304/6classes/Segmentation_Test_Set/pred_maskstest"
+    # image_dir = "../data/Segmentation_Test_Set/imagestest"
+    # label_dir = None
+    # pred_mask_dir = "../data/Segmentation_Test_Set/pred_maskstest"
+    # save_dir = "../data/Segmentation_Test_Set/pred_maskstest/exp_0322"
 
     os.makedirs(save_dir, exist_ok=True)
     label_dict = get_label_dict(image_dir, label_dir)
-    class_index = {'STBD TS':0, 'STBD BT':1, 'STBD VS': 2, 'PS TS':3, 'PS BT':4, 'PS VS':5}
-    # class_index = {'STBD TS':0, 'STBD BT':1, 'STBD VS': 2, 'PS TS':0, 'PS BT':1, 'PS VS':2}
+    # class_index = {'STBD TS':0, 'STBD BT':1, 'STBD VS': 2, 'PS TS':3, 'PS BT':4, 'PS VS':5}
+    class_index = {'STBD TS':0, 'STBD BT':1, 'STBD VS': 2, 'PS TS':0, 'PS BT':1, 'PS VS':2}
     # name = 'V3 13HR'
 
     # collect names with test result

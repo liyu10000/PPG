@@ -75,4 +75,3 @@ def crf(original_image, annotated_image, use_2d=True):
     # Note that there is no "unknown" here anymore, no matter what we had at first.
     MAP = colorize[MAP,:]
     return MAP.reshape(original_image.shape)
-

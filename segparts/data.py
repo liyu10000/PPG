@@ -6,7 +6,7 @@ import pandas as pd
 from tqdm import tqdm
 from torch.utils.data import DataLoader, Dataset, random_split
 from albumentations import HorizontalFlip, ShiftScaleRotate, Normalize, Resize, Compose, GaussNoise
-from albumentations import RandomContrast, RandomBrightness, RandomBrightnessContrast
+from albumentations import RandomContrast, RandomBrightness, RandomBrightnessContrast, ToGray
 from albumentations.pytorch import ToTensor
 
 
@@ -149,10 +149,10 @@ def get_transforms(phase, mean, std):
     if phase == "train":
         list_transforms.extend(
             [
-                HorizontalFlip(p=0.5), # only horizontal flip as of now
-                # RandomContrast(p=0.5),
-                # RandomBrightness(p=0.5),
-                RandomBrightnessContrast(p=0.5),
+                HorizontalFlip(p=0.5),
+                RandomContrast(p=0.5),
+                RandomBrightness(p=0.5),
+                # RandomBrightnessContrast(p=0.5),
             ]
         )
     list_transforms.extend(
@@ -177,13 +177,11 @@ def calc_mean_std(dataset):
     for _, image, _ in tqdm(dataset, "Computing mean/std", len(dataset), unit="image"):
         image = np.array(image)
         pixels = image.reshape((-1, image.shape[2]))
-
         for pixel in pixels:
             diff = pixel - pixel_mean
             pixel_mean += diff / k
             pixel_std += diff * (pixel - pixel_mean)
             k += 1
-
     pixel_std = np.sqrt(pixel_std / (k - 2))
     pixel_mean /= 255.
     pixel_std /= 255.
@@ -227,6 +225,7 @@ def generator(
             image_dir,
             label_dir,
             phase,
+            classes,
             mean=None,
             std=None,
             shuffle=True,
@@ -234,18 +233,23 @@ def generator(
             num_workers=4,
             ):
     label_dict = get_label_dict(image_dir, label_dir)
-    class_index = {'STBD TS':0, 'STBD BT':1, 'STBD VS': 2, 'PS TS':3, 'PS BT':4, 'PS VS':5}
+    if classes == 6:
+        class_index = {'STBD TS':0, 'STBD BT':1, 'STBD VS': 2, 'PS TS':3, 'PS BT':4, 'PS VS':5}
+    elif classes == 3:
+        class_index = {'STBD TS':0, 'STBD BT':1, 'STBD VS': 2, 'PS TS':0, 'PS BT':1, 'PS VS':2}
+    else:  # classes = 1
+        class_index = {'STBD TS':0, 'STBD BT':0, 'STBD VS': 0, 'PS TS':0, 'PS BT':0, 'PS VS':0}
     keys = list(label_dict.keys())
     keys.sort()
     random.Random(seed).shuffle(keys) # shuffle with seed, so that yielding same sampling
     if phase == "train":
-        sample_keys = keys[:16] + keys[24:]
+        sample_keys = keys[:24] + keys[36:]
     elif phase == "val":
-        sample_keys = keys[16:24]
+        sample_keys = keys[24:36]
     else:
         sample_keys = keys
     # sample_keys = keys  # use all data for train & val
-    print(phase, sample_keys)
+    print(phase, len(sample_keys), sample_keys)
     sample_label_dict = {key:label_dict[key] for key in sample_keys}
     dataset = PPGDataset(sample_label_dict, class_index, mean, std, phase)
     dataloader = DataLoader(

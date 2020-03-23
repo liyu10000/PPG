@@ -16,7 +16,6 @@ from data import generator
 from loss import bce_dice_loss
 from log import Meter
 
-
 warnings.filterwarnings("ignore")
 seed = 42
 random.seed(seed)
@@ -27,22 +26,23 @@ torch.backends.cudnn.deterministic = True
 torch.backends.cudnn.benchmark = True
 
 
+classes = 6
 image_dir = "../data/labeled/images"
 label_dir = "../data/labeled/labels"
-start_model = "./xcep_tv_60th.pth"
-save_model = "./xcep_tv_90th.pth"
+start_model = "./xcep_90th.pth"
+save_model = "./xcep_90th.pth"
 
 
 class Trainer(object):
     '''This class takes care of training and validation of our model'''
     def __init__(self, model):
         self.num_workers = 8
-        self.batch_size = {"train": 8, "val": 8}
-        self.accumulation_steps =  64 // self.batch_size['train']
-        self.lr = 1e-3
+        self.batch_size = {"train": 4, "val": 4}
+        self.accumulation_steps =  32 // self.batch_size['train']
+        self.lr = 1e-4
         self.resume = True
         self.num_epochs = 90
-        self.epoch = 0
+        self.epoch = 60 # the epoch to start counting
         self.best_loss = float("inf")
         self.phases = ["train", "val"]
         self.device = torch.device("cuda:0")
@@ -50,13 +50,12 @@ class Trainer(object):
         self.net = model
         if self.resume:
             checkpoint = torch.load(start_model)
-            self.epoch = checkpoint["epoch"] + 1  # it may not be the last epoch being runned
-            self.epoch = 60 # the last epoch number
+            # self.epoch = checkpoint["epoch"] + 1  # it may not be the last epoch being runned
             self.best_loss = checkpoint["best_loss"]
             self.net.load_state_dict(checkpoint["state_dict"])
         self.net = self.net.to(self.device)
-        # self.criterion = torch.nn.BCEWithLogitsLoss()
-        self.criterion = bce_dice_loss
+        self.criterion = torch.nn.BCEWithLogitsLoss()
+        # self.criterion = bce_dice_loss
         self.optimizer = optim.Adam(self.net.parameters(), lr=self.lr)
         self.scheduler = ReduceLROnPlateau(self.optimizer, mode="min", patience=3, verbose=True)
         self.dataloaders = {
@@ -64,10 +63,13 @@ class Trainer(object):
                 image_dir=image_dir,
                 label_dir=label_dir,
                 phase=phase,
+                classes=classes,
                 # mean=(0.485, 0.456, 0.406), # statistics from ImageNet
                 # std=(0.229, 0.224, 0.225),
-                mean=(0.400, 0.413, 0.481),   # statistics from custom dataset
-                std=(0.286, 0.267, 0.286),
+                # mean=(0.400, 0.413, 0.481),   # statistics from custom dataset
+                # std=(0.286, 0.267, 0.286),
+                mean=(0.415, 0.425, 0.496),   # statistics from custom dataset
+                std=(0.294, 0.279, 0.293),
                 batch_size=self.batch_size[phase],
                 num_workers=self.num_workers,
             )
@@ -93,7 +95,7 @@ class Trainer(object):
         dataloader = self.dataloaders[phase]
         running_loss = 0.0
         total_batches = len(dataloader)
-#         tk0 = tqdm_notebook(dataloader, total=total_batches)
+        # tk0 = tqdm_notebook(dataloader, total=total_batches)
         self.optimizer.zero_grad()
         for itr, batch in enumerate(dataloader): # replace `dataloader` with `tk0` for tqdm
             _, images, targets = batch
@@ -107,7 +109,7 @@ class Trainer(object):
             running_loss += loss.item()
             outputs = outputs.detach().cpu()
             meter.update(targets, outputs)
-#             tk0.set_postfix(loss=(running_loss / ((itr + 1))))
+            # tk0.set_postfix(loss=(running_loss / ((itr + 1))))
         epoch_loss = (running_loss * self.accumulation_steps) / total_batches
         meter.log(epoch_loss)
         torch.cuda.empty_cache()
@@ -143,7 +145,7 @@ if __name__ == "__main__":
     # )
     model = smp.Unet("xception", 
                      in_channels=3, 
-                     classes=6, 
+                     classes=classes, 
                      encoder_weights="imagenet", 
                      activation=None)
 

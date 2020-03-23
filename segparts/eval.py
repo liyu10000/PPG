@@ -135,7 +135,7 @@ if __name__ == '__main__':
 
     image_dir = "../data/Segmentation_Test_Set/images"
     label_dir = "../data/Segmentation_Test_Set/labels"
-    pred_mask_dir = "../data/Segmentation_Test_Set/pred_masks"
+    pred_mask_dir = "../data/Segmentation_Test_Set/pred_masks/exp_0322"
 
     calc_loss(image_dir, label_dir, pred_mask_dir, process_mask, np.float32, nn.BCEWithLogitsLoss())
     calc_loss(image_dir, label_dir, pred_mask_dir, process_mask, np.uint8, iou_pytorch)

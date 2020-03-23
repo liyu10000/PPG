@@ -23,16 +23,16 @@ classes = 6
 # label_dir = None
 # pred_mask_dir = "../data/labeled/pred_masks/Hi-Resx2"
 
-# image_dir = "../data/Segmentation_Test_Set/images"
-# label_dir = "../data/Segmentation_Test_Set/labels"
-# pred_mask_dir = "../data/Segmentation_Test_Set/pred_masks"
+image_dir = "../data/Segmentation_Test_Set/images"
+label_dir = "../data/Segmentation_Test_Set/labels"
+pred_mask_dir = "../data/Segmentation_Test_Set/pred_masks/exp_0322"
 
-image_dir = "../data/Segmentation_Test_Set/imagestest"
-label_dir = None
-pred_mask_dir = "../data/Segmentation_Test_Set/pred_maskstest"
+# image_dir = "../data/Segmentation_Test_Set/imagestest"
+# label_dir = None
+# pred_mask_dir = "../data/Segmentation_Test_Set/pred_maskstest/exp_0322"
 
 os.makedirs(pred_mask_dir, exist_ok=True)
-best_model = "./exp_0304/6classes/xcep_tv_90th.pth"
+best_model = "./xcep_90th.pth"
 
 
 
@@ -54,7 +54,7 @@ def post_process(probability, threshold, min_size):
 class Tester(object):
     '''This class takes care of testing of our model'''
     def __init__(self, model):
-        self.num_workers = 8
+        self.num_workers = 4
         self.batch_size = 8
         self.pred_mask_dir = pred_mask_dir
         self.device = torch.device("cuda:0")
@@ -77,10 +77,11 @@ class Tester(object):
                                     image_dir=image_dir,
                                     label_dir=label_dir,
                                     phase="test",
-                                    # mean=(0.485, 0.456, 0.406), # statistics from ImageNet
-                                    # std=(0.229, 0.224, 0.225),
-                                    mean=(0.400, 0.413, 0.481),   # statistics from custom dataset
-                                    std=(0.286, 0.267, 0.286),
+                                    classes=classes,
+                                    # mean=(0.400, 0.413, 0.481),   # statistics from custom dataset
+                                    # std=(0.286, 0.267, 0.286),
+                                    mean=(0.415, 0.425, 0.496),   # statistics from custom dataset
+                                    std=(0.294, 0.279, 0.293),
                                     shuffle=False,
                                     batch_size=self.batch_size,
                                     num_workers=self.num_workers,
