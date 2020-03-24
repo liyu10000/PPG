@@ -40,8 +40,9 @@ def calc_loss(image_dir, label_dir, pred_mask_dir, process_fn, dtype, loss_fn):
     names = [os.path.splitext(f)[0] for f in os.listdir(pred_mask_dir) 
                                     if f.endswith('.npy')]
     losses = [0.0] * 4 # TS, BT, VS, and all
+    print('# files to evaluate', len(names))
     for name in names:
-        print('processing', name)
+        # print('processing', name)
         label_info = label_dict[name]
         img = cv2.imread(label_info["path"])
         img, factor, direction, pad = resize_with_pad(img)
@@ -58,7 +59,8 @@ def calc_loss(image_dir, label_dir, pred_mask_dir, process_fn, dtype, loss_fn):
             pred_mask = bin_mask(pred_mask)
         pred_side, pred_mask = get_sidemask(pred_mask)
         pred_mask = process_fn(pred_mask)
-        pred_mask = pred_mask / 255.
+        if np.max(pred_mask) == 255:
+            pred_mask = pred_mask / 255.
         pred_mask = pred_mask.astype(dtype)
         # print(pred_mask.shape)
 

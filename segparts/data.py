@@ -151,6 +151,7 @@ def get_transforms(phase, mean, std):
         list_transforms.extend(
             [
                 HorizontalFlip(p=0.5),
+                # ShiftScaleRotate(shift_limit=0.0625, scale_limit=0.1, rotate_limit=10, border_mode=cv2.BORDER_CONSTANT, value=0, mask_value=0),
                 RandomContrast(p=0.5),
                 RandomBrightness(p=0.5),
                 # RandomBrightnessContrast(p=0.5),
@@ -250,7 +251,7 @@ def generator(
     elif phase == "val":
         sample_keys = keys[val_interval1:val_interval2]
     else:
-        sample_keys = keys
+        sample_keys = keys[:12]
     # sample_keys = keys  # use all data for train & val
     print(phase, len(sample_keys), sample_keys)
     sample_label_dict = {key:label_dict[key] for key in sample_keys}
@@ -267,19 +268,32 @@ def generator(
 
 
 if __name__ == "__main__":
+    # test dataloader
     image_dir = "../data/labeled/images"
     label_dir = "../data/labeled/labels"
     label_dict = get_label_dict(image_dir, label_dir)
-    class_index = {'STBD TS':0, 'STBD BT':1, 'STBD VS': 2, 'PS TS':3, 'PS BT':4, 'PS VS':5}
+    class_index = {'STBD TS':0, 'STBD BT':1, 'STBD VS': 2, 'PS TS':0, 'PS BT':1, 'PS VS':2}
     mean = (0.0, 0.0, 0.0)
     std = (1.0, 1.0, 1.0)
-    phase = "test"
+    phase = "train"
     dataset = PPGDataset(label_dict, class_index, mean, std, phase)
 
-    name, img, mask = dataset[0]
-    print(name, img.shape, mask.shape)
+    tmp_dir = './tmp'
+    os.makedirs(tmp_dir, exist_ok=True)
+    print('# files', len(dataset))
+    for i in range(len(dataset)):
+        name, img, mask = dataset[i]
+        print(name, img.shape, mask.shape)
+        
+        img = img.numpy().transpose((1, 2, 0))
+        mask = mask.numpy().transpose((1, 2, 0))
+        img *= 255
+        mask *= 255
+        cv2.imwrite(os.path.join(tmp_dir, name+'.png'), img)
+        cv2.imwrite(os.path.join(tmp_dir, name+'_mask.png'), mask)
+        # break
 
-    # calculate mean and std of dataset
-    mean, std = calc_mean_std(dataset)
-    print('mean: ', mean)
-    print('std: ', std)
+    # # calculate mean and std of dataset
+    # mean, std = calc_mean_std(dataset)
+    # print('mean: ', mean)
+    # print('std: ', std)

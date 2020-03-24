@@ -10,57 +10,6 @@ from data import scan_files, get_label_dict, resize_with_pad, make_mask
 from config import Config
 
 
-def get_lowerbound(mask):  # usually the second mask
-    """ Get lower bound of mask, input should be 2d: H x W
-    """
-    H, W = mask.shape
-    line_mask = np.sum(mask, axis=0) > 0
-    bound = np.zeros((np.sum(line_mask), 2))
-    b = 0
-    for i in range(W):
-        if line_mask[i]:
-            j = H - 1 - np.argmax(mask[:, i][::-1])
-            # if j < H - 3: # remove bound on image border
-            bound[b][0] = i
-            bound[b][1] = j
-            b += 1
-    return bound
-
-# def finetune_lowerbound(bound, lowermask):
-#     H, W = lowermask.shape
-#     line_mask = np.sum(lowermask, axis=0) > 0
-#     bound = [bound[i] for ]
-
-def get_upperbound(mask):  # usually the second mask
-    """ Get upper bound of mask, input should be 2d: H x W
-    """
-    H, W = mask.shape
-    line_mask = np.sum(mask, axis=0) > 0
-    bound = np.zeros((np.sum(line_mask), 2))
-    b = 0
-    for i in range(W):
-        if line_mask[i]:
-            j = np.argmax(mask[:, i])
-            # if j > 2: # remove bound on image border
-            bound[b][0] = i
-            bound[b][1] = j
-            b += 1
-    return bound
-
-def remove_outliers(data):
-    y = data[:, 1]
-    threshold = 3
-    mean = np.mean(y)
-    std = np.std(y)
-    
-    data_new = []
-    for i,d in enumerate(y):
-        z_score= (d - mean) / std 
-        if abs(z_score) < threshold:
-            data_new.append(data[i, :])
-    return np.array(data_new)
-
-
 def refine_mask(probability, threshold, min_size):
     '''Post processing of each predicted mask, components with lesser number of pixels
     than `min_size` are ignored'''
@@ -188,6 +137,7 @@ def contour(img):
     contours = combine_contours(contours)
     img = np.zeros_like(img)
     cv2.drawContours(img, contours, -1, (255, 0, 0), -1)  # fill the biggest contour
+    img = img / 255
     return img
 
 def contour_convex(img):
@@ -198,6 +148,7 @@ def contour_convex(img):
     hull = cv2.convexHull(contours[0], False)
     img = np.zeros_like(img)
     cv2.drawContours(img, [hull], -1, (255, 0, 0), -1)  # fill convex hull
+    img = img / 255
     return img
 
 def get_3channelmask(mask):
@@ -210,6 +161,56 @@ def get_3channelmask(mask):
         return mask[:, :, 3:]
     else:
         return mask[:, :, :3]
+
+def get_lowerbound(mask):  # usually the second mask
+    """ Get lower bound of mask, input should be 2d: H x W
+    """
+    H, W = mask.shape
+    line_mask = np.sum(mask, axis=0) > 0
+    bound = np.zeros((np.sum(line_mask), 2))
+    b = 0
+    for i in range(W):
+        if line_mask[i]:
+            j = H - 1 - np.argmax(mask[:, i][::-1])
+            # if j < H - 3: # remove bound on image border
+            bound[b][0] = i
+            bound[b][1] = j
+            b += 1
+    return bound
+
+# def finetune_lowerbound(bound, lowermask):
+#     H, W = lowermask.shape
+#     line_mask = np.sum(lowermask, axis=0) > 0
+#     bound = [bound[i] for ]
+
+def get_upperbound(mask):  # usually the second mask
+    """ Get upper bound of mask, input should be 2d: H x W
+    """
+    H, W = mask.shape
+    line_mask = np.sum(mask, axis=0) > 0
+    bound = np.zeros((np.sum(line_mask), 2))
+    b = 0
+    for i in range(W):
+        if line_mask[i]:
+            j = np.argmax(mask[:, i])
+            # if j > 2: # remove bound on image border
+            bound[b][0] = i
+            bound[b][1] = j
+            b += 1
+    return bound
+
+def remove_outliers(data):
+    y = data[:, 1]
+    threshold = 3
+    mean = np.mean(y)
+    std = np.std(y)
+    
+    data_new = []
+    for i,d in enumerate(y):
+        z_score= (d - mean) / std 
+        if abs(z_score) < threshold:
+            data_new.append(data[i, :])
+    return np.array(data_new)
 
 def fill_mask_up(mask, upperbound, lowerbound):
     """
@@ -297,7 +298,7 @@ if __name__ == '__main__':
     cfg = Config().parse()
 
     image_dir = cfg.test_image_dir
-    label_dir = cfg.test_label_dir
+    label_dir = cfg.test_label_dir if cfg.test_label_dir != 'None' else None
     pred_mask_dir = cfg.pred_mask_dir
     save_dir = cfg.plot_mask_dir
 
