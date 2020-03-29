@@ -16,6 +16,7 @@ from data import generator
 
 
 cfg = Config().parse()
+print(cfg)
 
 
 class Tester(object):

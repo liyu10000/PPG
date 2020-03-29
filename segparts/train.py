@@ -19,6 +19,7 @@ from log import Meter
 
 warnings.filterwarnings("ignore")
 cfg = Config().parse()
+print(cfg)
 seed = cfg.seed
 random.seed(seed)
 os.environ["PYTHONHASHSEED"] = str(seed)
