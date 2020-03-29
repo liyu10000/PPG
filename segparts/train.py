@@ -14,7 +14,7 @@ from torch.optim.lr_scheduler import ReduceLROnPlateau
 
 from config import Config
 from data import generator
-from loss import bce_dice_loss
+from loss import bce_loss, dice_loss, bce_dice_loss
 from log import Meter
 
 warnings.filterwarnings("ignore")
@@ -42,6 +42,7 @@ class Trainer(object):
         self.resume = True if cfg.resume == 'True' else False
         self.num_epochs = cfg.num_epochs
         self.epoch = cfg.resume_from # the epoch to start counting
+        os.makedirs(os.path.dirname(cfg.model_path), exist_ok=True)
         self.start_model = cfg.model_path
         self.save_model = cfg.model_path
         self.best_loss = float("inf")
@@ -62,8 +63,12 @@ class Trainer(object):
             self.best_loss = checkpoint["best_loss"]
             self.net.load_state_dict(checkpoint["state_dict"])
         self.net = self.net.to(self.device)
-        self.criterion = torch.nn.BCEWithLogitsLoss()
-        # self.criterion = bce_dice_loss
+        if cfg.loss == 'bce':
+            self.criterion = bce_loss
+        elif cfg.loss == 'bce_dice':
+            self.criterion = bce_dice_loss
+        else:
+            self.criterion = dice_loss
         self.optimizer = optim.Adam(self.net.parameters(), lr=self.lr)
         self.scheduler = ReduceLROnPlateau(self.optimizer, mode="min", patience=3, verbose=True)
         self.dataloaders = {

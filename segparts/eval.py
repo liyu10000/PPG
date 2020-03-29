@@ -26,8 +26,11 @@ def get_sidemask(mask):
 # PyTroch version
 # https://www.kaggle.com/iezepov/fast-iou-scoring-metric-in-pytorch-and-numpy
 def iou_pytorch(outputs: torch.Tensor, labels: torch.Tensor):
+    """ Calculate IOU per channel
+    :param outputs: predicted mask, H x W
+    :param labels: ground truth mask, H x W
+    """
     SMOOTH = 1e-6
-    # expect outputs to be H x W
     intersection = (outputs & labels).float().sum()
     union = (outputs | labels).float().sum()  
     iou = (intersection + SMOOTH) / (union + SMOOTH) 

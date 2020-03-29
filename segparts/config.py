@@ -17,6 +17,7 @@ class Config:
         self._parser.add_argument('--num_workers', type=int, default=8)
         
         ### Training configuration.
+        self._parser.add_argument('--loss', type=str, default='bce', choices=['bce', 'bce_dice', 'dice'])
         self._parser.add_argument('--train_batch_size', type=int, default=8, help='batch size for training')
         self._parser.add_argument('--val_batch_size', type=int, default=8, help='batch size for validation')
         self._parser.add_argument('--accumulation_steps', type=int, default=32, help='number of steps to update params')
@@ -31,26 +32,20 @@ class Config:
         ## test on train
         # self._parser.add_argument('--test_image_dir', type=str, default='../data/labeled/images')
         # self._parser.add_argument('--test_label_dir', type=str, default='../data/labeled/labels')
-        # self._parser.add_argument('--pred_mask_dir', type=str, default='../data/labeled/pred_masks/exp_0329')
-        # self._parser.add_argument('--plot_mask_dir', type=str, default='../data/labeled/plot_masks/exp_0329')
+        # self._parser.add_argument('--pred_mask_dir', type=str, default='../data/labeled/pred_masks')
+        # self._parser.add_argument('--plot_mask_dir', type=str, default='../data/labeled/plot_masks')
         
         ## test on Hi-Resx2
         # self._parser.add_argument('--test_image_dir', type=str, default='../data/Hi-Resx2')
         # self._parser.add_argument('--test_label_dir', type=str, default='None')
         # self._parser.add_argument('--pred_mask_dir', type=str, default='../data/labeled/pred_masks/Hi-Resx2')
-        # self._parser.add_argument('--plot_mask_dir', type=str, default='../data/labeled/plot_masks/Hi-Resx2/exp_0329')
+        # self._parser.add_argument('--plot_mask_dir', type=str, default='../data/labeled/plot_masks/Hi-Resx2')
         
         ## test on separate testset (images/labels)
         self._parser.add_argument('--test_image_dir', type=str, default='../data/Segmentation_Test_Set/images')
         self._parser.add_argument('--test_label_dir', type=str, default='../data/Segmentation_Test_Set/labels')
-        self._parser.add_argument('--pred_mask_dir', type=str, default='../data/Segmentation_Test_Set/pred_masks/exp_0329')
-        self._parser.add_argument('--plot_mask_dir', type=str, default='../data/Segmentation_Test_Set/plot_masks/exp_0329')
-
-        ## test on separate testset (images only)
-        # self._parser.add_argument('--test_image_dir', type=str, default='../data/Segmentation_Test_Set/imagestest')
-        # self._parser.add_argument('--test_label_dir', type=str, default='None')
-        # self._parser.add_argument('--pred_mask_dir', type=str, default='../data/Segmentation_Test_Set/pred_maskstest/exp_0329')
-        # self._parser.add_argument('--plot_mask_dir', type=str, default='../data/Segmentation_Test_Set/plot_maskstest/exp_0329')
+        self._parser.add_argument('--pred_mask_dir', type=str, default='../data/Segmentation_Test_Set/pred_masks')
+        self._parser.add_argument('--plot_mask_dir', type=str, default='../data/Segmentation_Test_Set/plot_masks')
     
 
     def parse(self):

@@ -4,7 +4,7 @@ import torch.nn.functional as F
 from torch.autograd import Function
 import matplotlib.pyplot as plt
 
-classes = 6
+classes = 3
 
 class DiceCoeff(Function):
     """Dice coeff for individual examples"""
@@ -63,9 +63,11 @@ def dice_loss(inputs, targets):
 
     return 1. - s / (i + 1)
 
+def bce_loss(inputs, targets):
+    return nn.BCEWithLogitsLoss()(inputs, targets)
 
 def bce_dice_loss(inputs, targets):
-    return nn.BCEWithLogitsLoss()(inputs, targets) + dice_loss(inputs, targets)
+    return bce_loss(inputs, targets) + dice_loss(inputs, targets)
 
 
 def parse_train_log(train_log):
@@ -101,7 +103,7 @@ def parse_train_log(train_log):
     return epochs, train_losses, val_losses, train_ious, val_ious
 
 
-def plot_train_log(epochs, train_metric, val_metric):
+def plot_train_log(epochs, train_metric, val_metric, save_name=None):
     # plot trend
     fig, ax = plt.subplots(1, 1, figsize=(10,10))
 
@@ -109,4 +111,14 @@ def plot_train_log(epochs, train_metric, val_metric):
     ax.scatter(epochs, train_metric, marker='.', color='black')
     ax.scatter(epochs, val_metric, marker='s', color='red')
 
-    plt.show()
+    if save_name is None:
+        plt.show()
+    else:
+        plt.savefig(save_name)
+
+
+if __name__ == '__main__':
+    train_log = '../bce_dice_90p.out'
+    epochs, train_losses, val_losses, train_ious, val_ious = parse_train_log(train_log)
+    plot_train_log(epochs, train_losses, val_losses, './bce_dice_90p_loss.png')
+    plot_train_log(epochs, train_ious, val_ious, './bce_dice_90p_iou.png')
