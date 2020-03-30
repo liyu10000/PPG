@@ -75,7 +75,7 @@ def resize_with_pad(img, W, H):
         img = cv2.copyMakeBorder(img, 0, 0, pad, pad_, cv2.BORDER_CONSTANT, 0)  # pad with constant zeros
     return img, factor, direction, pad
 
-def make_mask(label_info, class_index, factor, direction, pad, W, H):
+def make_mask_with_pad(label_info, class_index, factor, direction, pad, W, H):
     """ 
     :param class_index: {'STBD TS':0, 'STBD BT':1, 'STBD VS': 2, 'PS TS':3, 'PS BT':4, 'PS VS':5}
     """
@@ -94,6 +94,32 @@ def make_mask(label_info, class_index, factor, direction, pad, W, H):
                     points[:, 1] += pad  # add pad to y
                 else:
                     points[:, 0] += pad  # add pad to x
+            cv2.fillConvexPoly(mask[i, :, :], points.astype(int), 1.0)  # mask[:, :, i] doesn't work
+    mask = mask.transpose(1, 2, 0) # H, W, C
+    return mask
+
+def resize_without_pad(img, W, H):
+    h, w, _ = img.shape
+    h_factor = H / h
+    w_factor = W / w
+    img = cv2.resize(img, (W, H))
+    return img, w_factor, h_factor
+
+def make_mask_without_pad(label_info, class_index, w_factor, h_factor, W, H):
+    """ 
+    :param class_index: {'STBD TS':0, 'STBD BT':1, 'STBD VS': 2, 'PS TS':3, 'PS BT':4, 'PS VS':5}
+    """
+    class_num = len(set(class_index.values()))  # determine number of classes by class indices
+    mask = np.zeros((class_num, H, W), dtype=np.float32)
+    for side_part, fs in label_info.items():
+        if side_part == "path":
+            continue
+        i = class_index[side_part]
+        for f in fs:
+            df = pd.read_csv(f)
+            points = df.to_numpy(dtype=np.float32)
+            points[:, 0] *= w_factor
+            points[:, 1] *= h_factor
             cv2.fillConvexPoly(mask[i, :, :], points.astype(int), 1.0)  # mask[:, :, i] doesn't work
     mask = mask.transpose(1, 2, 0) # H, W, C
     return mask
@@ -155,40 +181,41 @@ def plot_mask_on_img(img, mask, save_name=None):
         # img = cv2.cvtColor(img, cv2.COLOR_RGB2BGR)
         cv2.imwrite(save_name, img)
 
-def check_mask(image_dir, label_dir, save_dir):
+def check_mask(image_dir, label_dir, save_dir, topad):
     os.makedirs(save_dir, exist_ok=True)
     label_dict = get_label_dict(image_dir, label_dir)
     class_index = {'STBD TS':0, 'STBD BT':1, 'STBD VS': 2, 'PS TS':0, 'PS BT':1, 'PS VS':2}
     names = [os.path.splitext(f)[0] for f in os.listdir(image_dir) if f.endswith('.png')]
-
     for name in names:
         print('processing', name)
         label_info = label_dict[name]
         img = cv2.imread(label_info["path"])
-        img, factor, direction, pad = resize_with_pad(img, 640, 480)
-        if label_dir is not None:
-            mask = make_mask(label_info, class_index, factor, direction, pad, 640, 480)
-            mask = mask.astype(np.uint8)
-            # print(img.shape, mask.shape)
-        # put mask on img
-        if label_dir is not None:
-            mask = get_3channelmask(mask)
-            plot_mask_on_img(img, mask, os.path.join(save_dir, name+'_mask.jpg'))
+        if topad:
+            img, factor, direction, pad = resize_with_pad(img, 640, 480)
+            mask = make_mask_with_pad(label_info, class_index, factor, direction, pad, 640, 480)
+        else:
+            img, w_factor, h_factor = resize_without_pad(img, 640, 480)
+            mask = make_mask_without_pad(label_info, class_index, w_factor, h_factor, 640, 480)
+        cv2.imwrite(os.path.join(save_dir, name+'.jpg'), img)
+        mask = mask.astype(np.uint8)
+        mask = get_3channelmask(mask)
+        plot_mask_on_img(img, mask, os.path.join(save_dir, name+'_mask.jpg'))
 
 
 if __name__ == "__main__":
-    # revert mask points
-    image_dir = "../data/labeled/images"
-    label_dir = "../data/labeled/labels"
-    image_src_dir = "../data/Hi-Res-tmp"
-    new_image_dir = "../data/labeled/images_new"
-    new_label_dir = "../data/labeled/labels_new"
-    os.makedirs(new_image_dir, exist_ok=True)
-    os.makedirs(new_label_dir, exist_ok=True)
-    revert(image_dir, label_dir, image_src_dir, new_image_dir, new_label_dir)
+    # # revert mask points
+    # image_dir = "../data/labeled/images"
+    # label_dir = "../data/labeled/labels"
+    # image_src_dir = "../data/Hi-Res-tmp"
+    # new_image_dir = "../data/labeled/images_new"
+    # new_label_dir = "../data/labeled/labels_new"
+    # os.makedirs(new_image_dir, exist_ok=True)
+    # os.makedirs(new_label_dir, exist_ok=True)
+    # revert(image_dir, label_dir, image_src_dir, new_image_dir, new_label_dir)
 
     # put mask on img for checking
-    image_dir = "../data/labeled/images_new"
-    label_dir = "../data/labeled/labels_new"
+    image_dir = "../data/labeled/images"
+    label_dir = "../data/labeled/labels"
     save_dir = "../data/labeled/masks"
-    check_mask(image_dir, label_dir, save_dir)
+    topad = False
+    check_mask(image_dir, label_dir, save_dir, topad)

@@ -34,6 +34,7 @@
 1. Added additional dataset
 2. Run *3-class* segmentation
 3. Tried bce, dice and bce_dice loss, respectively.
+4. Also tried resizing image without padding.
 
  - Config
 1. Validate on 12 images, train on the rest (92).
@@ -43,3 +44,4 @@
  - Result
 1. Bce_dice is slightly better than bce.
 2. Dice is the worst.
+3. Resizing without padding is not good.
