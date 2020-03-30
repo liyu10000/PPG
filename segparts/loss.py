@@ -83,7 +83,6 @@ def parse_train_log(train_log):
                 tokens = line.strip().split()
                 epoch = int(tokens[2])
                 epochs.append(epoch)  # number of epochs
-
                 i += 1
                 line = lines[i]
                 tokens = line.strip().split()
@@ -106,11 +105,9 @@ def parse_train_log(train_log):
 def plot_train_log(epochs, train_metric, val_metric, save_name=None):
     # plot trend
     fig, ax = plt.subplots(1, 1, figsize=(10,10))
-
     ax.grid()
     ax.scatter(epochs, train_metric, marker='.', color='black')
     ax.scatter(epochs, val_metric, marker='s', color='red')
-
     if save_name is None:
         plt.show()
     else:
@@ -118,7 +115,7 @@ def plot_train_log(epochs, train_metric, val_metric, save_name=None):
 
 
 if __name__ == '__main__':
-    train_log = '../bce_dice_90p.out'
+    train_log = '../dice_90p.out'
     epochs, train_losses, val_losses, train_ious, val_ious = parse_train_log(train_log)
-    plot_train_log(epochs, train_losses, val_losses, './bce_dice_90p_loss.png')
-    plot_train_log(epochs, train_ious, val_ious, './bce_dice_90p_iou.png')
+    plot_train_log(epochs, train_losses, val_losses, '../dice_90p_loss.png')
+    plot_train_log(epochs, train_ious, val_ious, '../dice_90p_iou.png')

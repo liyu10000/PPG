@@ -34,8 +34,11 @@ class Trainer(object):
     def __init__(self, model, cfg):
         self.image_dir = cfg.image_dir
         self.label_dir = cfg.label_dir
+        self.W = cfg.W
+        self.H = cfg.H
         self.classes = cfg.classes
         self.num_workers = cfg.num_workers
+        self.resize_with_pad = True if cfg.resize_with_pad == 'True' else False
         self.batch_size = {"train": cfg.train_batch_size, "val": cfg.val_batch_size}
         self.accumulation_steps =  cfg.accumulation_steps // self.batch_size['train']
         self.lr = cfg.lr
@@ -77,6 +80,9 @@ class Trainer(object):
                 label_dir=self.label_dir,
                 phase=phase,
                 classes=self.classes,
+                W=self.W,
+                H=self.H,
+                pad=self.resize_with_pad,
                 val_interval=self.val_interval,
                 # mean=(0.485, 0.456, 0.406), # statistics from ImageNet
                 # std=(0.229, 0.224, 0.225),

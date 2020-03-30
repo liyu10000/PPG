@@ -12,8 +12,11 @@ class Config:
         self._parser.add_argument('--seed', type=int, default=42, help='set the random seed for random, np, and torch')
         self._parser.add_argument('--image_dir', type=str, default='../data/labeled/images')
         self._parser.add_argument('--label_dir', type=str, default='../data/labeled/labels')
+        self._parser.add_argument('--W', type=int, default=640, help='image width to resize to')
+        self._parser.add_argument('--H', type=int, default=480, help='image height to resize to')
         self._parser.add_argument('--classes', type=int, default=3, choices=[6, 3, 1], help='number of classes')
         self._parser.add_argument('--model_path', type=str, default='./model.pth')
+        self._parser.add_argument('--resize_with_pad', type=str, default='True', choices=['True', 'False'])
         self._parser.add_argument('--num_workers', type=int, default=8)
         
         ### Training configuration.

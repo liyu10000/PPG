@@ -17,39 +17,6 @@ os.environ["PYTHONHASHSEED"] = str(seed)
 np.random.seed(seed)
 
 
-# ### RLE-Mask utility functions
-# #https://www.kaggle.com/paulorzp/rle-functions-run-lenght-encode-decode
-# def mask2rle(img):
-#     '''
-#     img: numpy array, 1 -> mask, 0 -> background
-#     Returns run length as string formated
-#     '''
-#     pixels= img.T.flatten()
-#     pixels = np.concatenate([[0], pixels, [0]])
-#     runs = np.where(pixels[1:] != pixels[:-1])[0] + 1
-#     runs[1::2] -= runs[::2]
-#     return ' '.join(str(x) for x in runs)
-
-# def make_mask(row_id, df):
-#     '''Given a row index, return image_id and mask (256, 1600, 4) from the dataframe `df`'''
-#     fname = df.iloc[row_id].name
-#     labels = df.iloc[row_id][:4]
-#     masks = np.zeros((256, 1600, 4), dtype=np.float32) # float32 is V.Imp
-#     # 4:class 1～4 (ch:0～3)
-
-#     for idx, label in enumerate(labels.values):
-#         if label is not np.nan:
-#             label = label.split(" ")
-#             positions = map(int, label[0::2])
-#             length = map(int, label[1::2])
-#             mask = np.zeros(256 * 1600, dtype=np.uint8)
-#             for pos, le in zip(positions, length):
-#                 mask[pos:(pos + le)] = 1
-#             masks[:, :, idx] = mask.reshape(256, 1600, order='F')
-#     return fname, masks
-
-
-
 def scan_files(directory, prefix=None, postfix=None):
     files_list = []
     for root, sub_dirs, files in os.walk(directory):
@@ -93,7 +60,7 @@ def get_label_dict(image_dir, label_dir):
     return label_dict
 
 
-def resize_with_pad(img, W=640, H=480):
+def resize_with_pad(img, W, H):
     h, w, _ = img.shape  # usually we expect h >= H and w >= W
     factor = 1.0         # scaling factor, <= 1.0
     direction = "None"   # pad direction, can be None, Height, Width
@@ -119,10 +86,8 @@ def resize_with_pad(img, W=640, H=480):
         img = cv2.copyMakeBorder(img, 0, 0, pad, pad_, cv2.BORDER_CONSTANT, 0)  # pad with constant zeros
     return img, factor, direction, pad
 
-
-def make_mask(label_info, class_index, factor, direction, pad, W=640, H=480):
+def make_mask(label_info, class_index, factor, direction, pad, W, H):
     """ 
-    :param name: image name, like 'V9 50HR'
     :param class_index: {'STBD TS':0, 'STBD BT':1, 'STBD VS': 2, 'PS TS':3, 'PS BT':4, 'PS VS':5}
     """
     class_num = len(set(class_index.values()))  # determine number of classes by class indices
@@ -140,6 +105,33 @@ def make_mask(label_info, class_index, factor, direction, pad, W=640, H=480):
                     points[:, 1] += pad  # add pad to y
                 else:
                     points[:, 0] += pad  # add pad to x
+            cv2.fillConvexPoly(mask[i, :, :], points.astype(int), 1.0)  # mask[:, :, i] doesn't work
+    mask = mask.transpose(1, 2, 0) # H, W, C
+    return mask
+
+
+def resize_without_pad(img, W, H):
+    h, w, _ = img.shape
+    h_factor = H / h
+    w_factor = W / w
+    img = cv2.resize(img, (W, H))
+    return img, w_factor, h_factor
+
+def make_mask(label_info, class_index, w_factor, h_factor, W, H):
+    """ 
+    :param class_index: {'STBD TS':0, 'STBD BT':1, 'STBD VS': 2, 'PS TS':3, 'PS BT':4, 'PS VS':5}
+    """
+    class_num = len(set(class_index.values()))  # determine number of classes by class indices
+    mask = np.zeros((class_num, H, W), dtype=np.float32)
+    for side_part, fs in label_info.items():
+        if side_part == "path":
+            continue
+        i = class_index[side_part]
+        for f in fs:
+            df = pd.read_csv(f)
+            points = df.to_numpy(dtype=np.float32)
+            points[:, 0] *= w_factor
+            points[:, 1] *= h_factor
             cv2.fillConvexPoly(mask[i, :, :], points.astype(int), 1.0)  # mask[:, :, i] doesn't work
     mask = mask.transpose(1, 2, 0) # H, W, C
     return mask
@@ -192,7 +184,7 @@ def calc_mean_std(dataset):
 
 ### Dataloader
 class PPGDataset(Dataset):
-    def __init__(self, label_dict, class_index, mean, std, phase):
+    def __init__(self, label_dict, class_index, mean, std, phase, W, H, pad):
         self.names = list(label_dict.keys())
         self.label_dict = label_dict
         self.class_index = class_index
@@ -200,19 +192,28 @@ class PPGDataset(Dataset):
         self.mean = mean
         self.std = std
         self.phase = phase
+        self.W = W
+        self.H = H
+        self.pad = pad # if pad at resize
         self.transforms = get_transforms(phase, mean, std)
 
     def __getitem__(self, idx):
         name = self.names[idx]
         label_info = self.label_dict[name]
         img = cv2.imread(label_info["path"])
-        img, factor, direction, pad = resize_with_pad(img)
+        if self.pad:
+            img, factor, direction, padding = resize_with_pad(img, self.W, self.H)
+        else:
+            img, w_factor, h_factor = resize_without_pad(img, self.W, self.H)
         if self.phase == "test":
             H, W, _ = img.shape
             C = self.classes
             mask = np.zeros((H, W, C))
         else:
-            mask = make_mask(label_info, self.class_index, factor, direction, pad)
+            if self.pad:
+                mask = make_mask(label_info, self.class_index, factor, direction, padding, self.W, self.H)
+            else:
+                mask = make_mask(label_info, self.class_index, w_factor, h_factor, self.W, self.H)
         augmented = self.transforms(image=img, mask=mask)
         img = augmented['image']
         mask = augmented['mask'] # 1xHxWxC
@@ -228,6 +229,9 @@ def generator(
             label_dir,
             phase,
             classes,
+            W,
+            H,
+            pad,
             val_interval=[0,12],
             mean=None,
             std=None,
@@ -255,7 +259,7 @@ def generator(
     # sample_keys = keys  # use all data for train & val
     print(phase, len(sample_keys), sample_keys)
     sample_label_dict = {key:label_dict[key] for key in sample_keys}
-    dataset = PPGDataset(sample_label_dict, class_index, mean, std, phase)
+    dataset = PPGDataset(sample_label_dict, class_index, mean, std, phase, W, H, pad)
     dataloader = DataLoader(
         dataset,
         batch_size=batch_size,
@@ -276,7 +280,7 @@ if __name__ == "__main__":
     mean = (0.0, 0.0, 0.0)
     std = (1.0, 1.0, 1.0)
     phase = "train"
-    dataset = PPGDataset(label_dict, class_index, mean, std, phase)
+    dataset = PPGDataset(label_dict, class_index, mean, std, phase, 640, 480, False)
 
     tmp_dir = './tmp'
     os.makedirs(tmp_dir, exist_ok=True)
@@ -289,8 +293,8 @@ if __name__ == "__main__":
         mask = mask.numpy().transpose((1, 2, 0))
         img *= 255
         mask *= 255
-        cv2.imwrite(os.path.join(tmp_dir, name+'.png'), img)
-        cv2.imwrite(os.path.join(tmp_dir, name+'_mask.png'), mask)
+        cv2.imwrite(os.path.join(tmp_dir, name+'.jpg'), img)
+        cv2.imwrite(os.path.join(tmp_dir, name+'_mask.jpg'), mask)
         # break
 
     # # calculate mean and std of dataset
