@@ -26,9 +26,19 @@ class Tester(object):
         self.batch_size = cfg.test_batch_size
         self.image_dir = cfg.test_image_dir
         self.label_dir = cfg.test_label_dir if cfg.test_label_dir != 'None' else None
+        self.W = cfg.W
+        self.H = cfg.H
         self.pred_mask_dir = cfg.pred_mask_dir
         os.makedirs(self.pred_mask_dir, exist_ok=True)
-        self.device = torch.device("cuda:0")
+        self.resize_with_pad = True if cfg.resize_with_pad == 'True' else False
+        if self.resize_with_pad:
+            self.mean = (0.415, 0.425, 0.496)
+            self.std = (0.294, 0.279, 0.293)
+        else:
+            self.mean = (0.442, 0.452, 0.526)
+            self.std = (0.282, 0.264, 0.273)
+        self.val_interval = [0, 12]
+        self.device = torch.device('cuda:0')
         torch.set_default_tensor_type("torch.cuda.FloatTensor")
         torch.backends.cudnn.benchmark = True
         self.classes = cfg.classes
@@ -50,10 +60,12 @@ class Tester(object):
                                     label_dir=self.label_dir,
                                     phase="test",
                                     classes=self.classes,
-                                    # mean=(0.400, 0.413, 0.481),   # statistics from custom dataset
-                                    # std=(0.286, 0.267, 0.286),
-                                    mean=(0.415, 0.425, 0.496),   # statistics from custom dataset
-                                    std=(0.294, 0.279, 0.293),
+                                    W=self.W,
+                                    H=self.H,
+                                    pad=self.resize_with_pad,
+                                    val_interval=self.val_interval,
+                                    mean=self.mean,
+                                    std=self.std,
                                     shuffle=False,
                                     batch_size=self.batch_size,
                                     num_workers=self.num_workers,

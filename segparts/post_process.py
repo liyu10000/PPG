@@ -6,7 +6,7 @@ import pandas as pd
 import matplotlib.pyplot as plt
 from skimage.filters import threshold_otsu
 
-from data import scan_files, get_label_dict, resize_with_pad, make_mask
+from data import scan_files, get_label_dict, resize_with_pad, resize_without_pad, make_mask_with_pad, make_mask_without_pad
 from config import Config
 
 
@@ -301,6 +301,9 @@ if __name__ == '__main__':
     label_dir = cfg.test_label_dir if cfg.test_label_dir != 'None' else None
     pred_mask_dir = cfg.pred_mask_dir
     save_dir = cfg.plot_mask_dir
+    W = cfg.W
+    H = cfg.H
+    topad = True if cfg.resize_with_pad == 'True' else False
 
     os.makedirs(save_dir, exist_ok=True)
     label_dict = get_label_dict(image_dir, label_dir)
@@ -321,9 +324,15 @@ if __name__ == '__main__':
         print('processing', name)
         label_info = label_dict[name]
         img = cv2.imread(label_info["path"])
-        img, factor, direction, pad = resize_with_pad(img)
+        if topad:
+            img, factor, direction, pad = resize_with_pad(img, W, H)
+        else:
+            img, w_factor, h_factor = resize_without_pad(img, W, H)
         if label_dir is not None:
-            mask = make_mask(label_info, class_index, factor, direction, pad)
+            if topad:
+                mask = make_mask_with_pad(label_info, class_index, factor, direction, pad, W, H)
+            else:
+                mask = make_mask_without_pad(label_info, class_index, w_factor, h_factor, W, H)
             mask = mask.astype(np.uint8)
             # print(img.shape, mask.shape)
 

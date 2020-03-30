@@ -7,7 +7,7 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 
-from data import scan_files, get_label_dict, resize_with_pad, make_mask
+from data import scan_files, get_label_dict, resize_with_pad, resize_without_pad, make_mask_with_pad, make_mask_without_pad
 from post_process import bin_mask, process_mask
 from config import Config
 
@@ -36,10 +36,22 @@ def iou_pytorch(outputs: torch.Tensor, labels: torch.Tensor):
     iou = (intersection + SMOOTH) / (union + SMOOTH) 
     return iou
 
-def calc_loss(image_dir, label_dir, pred_mask_dir, process_fn, dtype, loss_fn):
+def calc_loss(cfg, process_fn, dtype, loss_fn):
+    classes = cfg.classes
+    image_dir = cfg.test_image_dir
+    label_dir = cfg.test_label_dir
+    pred_mask_dir = cfg.pred_mask_dir
+    W = cfg.W
+    H = cfg.H
+    topad = True if cfg.resize_with_pad == 'True' else False
+
     label_dict = get_label_dict(image_dir, label_dir)
-    class_index = {'STBD TS':0, 'STBD BT':1, 'STBD VS': 2, 
-                   'PS TS':3, 'PS BT':4, 'PS VS':5}
+    if classes == 6:
+        class_index = {'STBD TS':0, 'STBD BT':1, 'STBD VS': 2, 'PS TS':3, 'PS BT':4, 'PS VS':5}
+    elif classes == 3:
+        class_index = {'STBD TS':0, 'STBD BT':1, 'STBD VS': 2, 'PS TS':0, 'PS BT':1, 'PS VS':2}
+    else:  # classes = 1
+        class_index = {'STBD TS':0, 'STBD BT':0, 'STBD VS': 0, 'PS TS':0, 'PS BT':0, 'PS VS':0}
     names = [os.path.splitext(f)[0] for f in os.listdir(pred_mask_dir) 
                                     if f.endswith('.npy')]
     losses = [0.0] * 4 # TS, BT, VS, and all
@@ -48,9 +60,12 @@ def calc_loss(image_dir, label_dir, pred_mask_dir, process_fn, dtype, loss_fn):
         # print('processing', name)
         label_info = label_dict[name]
         img = cv2.imread(label_info["path"])
-        img, factor, direction, pad = resize_with_pad(img)
-
-        mask = make_mask(label_info, class_index, factor, direction, pad)
+        if topad:
+            img, factor, direction, padding = resize_with_pad(img, W, H)
+            mask = make_mask_with_pad(label_info, class_index, factor, direction, padding, W, H)
+        else:
+            img, w_factor, h_factor = resize_without_pad(img, W, H)
+            mask = make_mask_without_pad(label_info, class_index, w_factor, h_factor, W, H)
         mask = mask.astype(dtype) # C, H, W
         side, mask = get_sidemask(mask) # H, W, 3
         # print(img.shape, mask.shape)
@@ -86,9 +101,5 @@ if __name__ == '__main__':
     # calculate bce loss for each side, each part
     cfg = Config().parse()
 
-    image_dir = cfg.test_image_dir
-    label_dir = cfg.test_label_dir
-    pred_mask_dir = cfg.pred_mask_dir
-
-    calc_loss(image_dir, label_dir, pred_mask_dir, process_mask, np.float32, nn.BCEWithLogitsLoss())
-    calc_loss(image_dir, label_dir, pred_mask_dir, process_mask, np.uint8, iou_pytorch)
+    calc_loss(cfg, process_mask, np.float32, nn.BCEWithLogitsLoss())
+    calc_loss(cfg, process_mask, np.uint8, iou_pytorch)

@@ -39,6 +39,12 @@ class Trainer(object):
         self.classes = cfg.classes
         self.num_workers = cfg.num_workers
         self.resize_with_pad = True if cfg.resize_with_pad == 'True' else False
+        if self.resize_with_pad:
+            self.mean = (0.415, 0.425, 0.496)
+            self.std = (0.294, 0.279, 0.293)
+        else:
+            self.mean = (0.442, 0.452, 0.526)
+            self.std = (0.282, 0.264, 0.273)
         self.batch_size = {"train": cfg.train_batch_size, "val": cfg.val_batch_size}
         self.accumulation_steps =  cfg.accumulation_steps // self.batch_size['train']
         self.lr = cfg.lr
@@ -57,7 +63,7 @@ class Trainer(object):
             self.val_interval = [12, 24]
         else:
             self.val_interval = [24, 36]
-        self.device = torch.device("cuda:0")
+        self.device = torch.device('cuda:0')
         torch.set_default_tensor_type("torch.cuda.FloatTensor")
         self.net = model
         if self.resume:
@@ -84,12 +90,8 @@ class Trainer(object):
                 H=self.H,
                 pad=self.resize_with_pad,
                 val_interval=self.val_interval,
-                # mean=(0.485, 0.456, 0.406), # statistics from ImageNet
-                # std=(0.229, 0.224, 0.225),
-                # mean=(0.400, 0.413, 0.481),   # statistics from custom dataset
-                # std=(0.286, 0.267, 0.286),
-                mean=(0.415, 0.425, 0.496),   # statistics from custom dataset
-                std=(0.294, 0.279, 0.293),
+                mean=self.mean,
+                std=self.std,
                 batch_size=self.batch_size[phase],
                 num_workers=self.num_workers,
             )

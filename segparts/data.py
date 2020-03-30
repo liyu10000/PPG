@@ -86,7 +86,7 @@ def resize_with_pad(img, W, H):
         img = cv2.copyMakeBorder(img, 0, 0, pad, pad_, cv2.BORDER_CONSTANT, 0)  # pad with constant zeros
     return img, factor, direction, pad
 
-def make_mask(label_info, class_index, factor, direction, pad, W, H):
+def make_mask_with_pad(label_info, class_index, factor, direction, pad, W, H):
     """ 
     :param class_index: {'STBD TS':0, 'STBD BT':1, 'STBD VS': 2, 'PS TS':3, 'PS BT':4, 'PS VS':5}
     """
@@ -117,7 +117,7 @@ def resize_without_pad(img, W, H):
     img = cv2.resize(img, (W, H))
     return img, w_factor, h_factor
 
-def make_mask(label_info, class_index, w_factor, h_factor, W, H):
+def make_mask_without_pad(label_info, class_index, w_factor, h_factor, W, H):
     """ 
     :param class_index: {'STBD TS':0, 'STBD BT':1, 'STBD VS': 2, 'PS TS':3, 'PS BT':4, 'PS VS':5}
     """
@@ -201,6 +201,7 @@ class PPGDataset(Dataset):
         name = self.names[idx]
         label_info = self.label_dict[name]
         img = cv2.imread(label_info["path"])
+        mask = None
         if self.pad:
             img, factor, direction, padding = resize_with_pad(img, self.W, self.H)
         else:
@@ -211,9 +212,9 @@ class PPGDataset(Dataset):
             mask = np.zeros((H, W, C))
         else:
             if self.pad:
-                mask = make_mask(label_info, self.class_index, factor, direction, padding, self.W, self.H)
+                mask = make_mask_with_pad(label_info, self.class_index, factor, direction, padding, self.W, self.H)
             else:
-                mask = make_mask(label_info, self.class_index, w_factor, h_factor, self.W, self.H)
+                mask = make_mask_without_pad(label_info, self.class_index, w_factor, h_factor, self.W, self.H)
         augmented = self.transforms(image=img, mask=mask)
         img = augmented['image']
         mask = augmented['mask'] # 1xHxWxC
@@ -255,7 +256,7 @@ def generator(
     elif phase == "val":
         sample_keys = keys[val_interval1:val_interval2]
     else:
-        sample_keys = keys[:12]
+        sample_keys = keys[val_interval1:val_interval2]
     # sample_keys = keys  # use all data for train & val
     print(phase, len(sample_keys), sample_keys)
     sample_label_dict = {key:label_dict[key] for key in sample_keys}
@@ -279,25 +280,26 @@ if __name__ == "__main__":
     class_index = {'STBD TS':0, 'STBD BT':1, 'STBD VS': 2, 'PS TS':0, 'PS BT':1, 'PS VS':2}
     mean = (0.0, 0.0, 0.0)
     std = (1.0, 1.0, 1.0)
-    phase = "train"
+    phase = "test"
     dataset = PPGDataset(label_dict, class_index, mean, std, phase, 640, 480, False)
 
-    tmp_dir = './tmp'
-    os.makedirs(tmp_dir, exist_ok=True)
-    print('# files', len(dataset))
-    for i in range(len(dataset)):
-        name, img, mask = dataset[i]
-        print(name, img.shape, mask.shape)
+    # # output mask as img for checking
+    # tmp_dir = './tmp'
+    # os.makedirs(tmp_dir, exist_ok=True)
+    # print('# files', len(dataset))
+    # for i in range(len(dataset)):
+    #     name, img, mask = dataset[i]
+    #     print(name, img.shape, mask.shape)
         
-        img = img.numpy().transpose((1, 2, 0))
-        mask = mask.numpy().transpose((1, 2, 0))
-        img *= 255
-        mask *= 255
-        cv2.imwrite(os.path.join(tmp_dir, name+'.jpg'), img)
-        cv2.imwrite(os.path.join(tmp_dir, name+'_mask.jpg'), mask)
-        # break
+    #     img = img.numpy().transpose((1, 2, 0))
+    #     mask = mask.numpy().transpose((1, 2, 0))
+    #     img *= 255
+    #     mask *= 255
+    #     cv2.imwrite(os.path.join(tmp_dir, name+'.jpg'), img)
+    #     cv2.imwrite(os.path.join(tmp_dir, name+'_mask.jpg'), mask)
+    #     # break
 
-    # # calculate mean and std of dataset
-    # mean, std = calc_mean_std(dataset)
-    # print('mean: ', mean)
-    # print('std: ', std)
+    # calculate mean and std of dataset
+    mean, std = calc_mean_std(dataset)
+    print('mean: ', mean)
+    print('std: ', std)
