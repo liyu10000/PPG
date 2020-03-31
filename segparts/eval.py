@@ -8,7 +8,7 @@ import torch.nn as nn
 import torch.nn.functional as F
 
 from data import scan_files, get_label_dict, resize_with_pad, resize_without_pad, make_mask_with_pad, make_mask_without_pad
-from post_process import bin_mask, process_mask
+from post_process import bin_mask, process_mask, zero_pad
 from config import Config
 
 
@@ -76,6 +76,8 @@ def calc_loss(cfg, process_fn, dtype, loss_fn):
         if len(set(class_index.values())) == 6:
             pred_mask = bin_mask(pred_mask)
         pred_side, pred_mask = get_sidemask(pred_mask)
+        if topad:
+            pred_mask = zero_pad(pred_mask, factor, direction, padding)
         pred_mask = process_fn(pred_mask)
         if np.max(pred_mask) == 255:
             pred_mask = pred_mask / 255.

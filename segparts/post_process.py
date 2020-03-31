@@ -212,6 +212,22 @@ def remove_outliers(data):
             data_new.append(data[i, :])
     return np.array(data_new)
 
+def zero_pad(mask, factor, direction, pad):
+    """ zero pad at predicted mask
+    :param mask: H, W, C
+    :param factor: scaling factor
+    :param direction: pad direction, Height or Width
+    :param pad: pad size
+    """
+    if pad > 0:
+        if direction == "Height":
+            mask[:pad, :, :] = 0
+            mask[-pad:, :, :] = 0
+        else:
+            mask[:, :pad, :] = 0
+            mask[:, -pad:, :] = 0
+    return mask
+
 def fill_mask_up(mask, upperbound, lowerbound):
     """
     :param mask: H, W
@@ -355,6 +371,8 @@ if __name__ == '__main__':
             mask = get_3channelmask(mask)
             plot_mask_on_img(img, mask, os.path.join(save_dir, name+'_true.jpg'))
         pred_mask = get_3channelmask(pred_mask)
+        if topad:
+            pred_mask = zero_pad(pred_mask, factor, direction, pad)
         pred_mask = process_mask(pred_mask)
         plot_mask_on_img(img, pred_mask, os.path.join(save_dir, name+'_pred.jpg'))
         pred_mask = cv2.cvtColor(pred_mask, cv2.COLOR_RGB2BGR)
