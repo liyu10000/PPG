@@ -45,3 +45,17 @@
 1. Bce_dice is slightly better than bce.
 2. Dice is the worst.
 3. Resizing without padding is not good.
+
+
+### Exp4 (04/09/2020)
+ - Idea
+1. Manually horizontal-flip images and labels.
+2. Manually JPEG compress training data, to accommodate low-res testing data. Use multiple strengths of compression.
+3. All data are resized without padding.
+
+ - Config
+1. Total number of images is 685. Validate on 70 images, train on the rest (615).
+2. One round of train-val is enough. Final # epochs is 30.
+
+ - Result
+1. Results are reasonably good, though not as good as the one from *Exp3*.

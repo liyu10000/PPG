@@ -6,8 +6,6 @@ import matplotlib.pyplot as plt
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-
-from data import scan_files, get_label_dict, resize_with_pad, resize_without_pad, make_mask_with_pad, make_mask_without_pad
 from post_process import bin_mask, process_mask, zero_pad
 from config import Config
 
@@ -41,31 +39,17 @@ def calc_loss(cfg, process_fn, dtype, loss_fn):
     image_dir = cfg.test_image_dir
     label_dir = cfg.test_label_dir
     pred_mask_dir = cfg.pred_mask_dir
-    W = cfg.W
-    H = cfg.H
-    topad = True if cfg.resize_with_pad == 'True' else False
 
-    label_dict = get_label_dict(image_dir, label_dir)
-    if classes == 6:
-        class_index = {'STBD TS':0, 'STBD BT':1, 'STBD VS': 2, 'PS TS':3, 'PS BT':4, 'PS VS':5}
-    elif classes == 3:
-        class_index = {'STBD TS':0, 'STBD BT':1, 'STBD VS': 2, 'PS TS':0, 'PS BT':1, 'PS VS':2}
-    else:  # classes = 1
-        class_index = {'STBD TS':0, 'STBD BT':0, 'STBD VS': 0, 'PS TS':0, 'PS BT':0, 'PS VS':0}
     names = [os.path.splitext(f)[0] for f in os.listdir(pred_mask_dir) 
                                     if f.endswith('.npy')]
     losses = [0.0] * 4 # TS, BT, VS, and all
     print('# files to evaluate', len(names))
     for name in names:
         # print('processing', name)
-        label_info = label_dict[name]
-        img = cv2.imread(label_info["path"])
-        if topad:
-            img, factor, direction, padding = resize_with_pad(img, W, H)
-            mask = make_mask_with_pad(label_info, class_index, factor, direction, padding, W, H)
-        else:
-            img, w_factor, h_factor = resize_without_pad(img, W, H)
-            mask = make_mask_without_pad(label_info, class_index, w_factor, h_factor, W, H)
+        # img = cv2.imread(os.path.join(image_dir, name+'.png'))
+        mask = cv2.imread(os.path.join(label_dir, name+'.png'))
+        if np.max(mask) == 255:
+            mask = mask / 255.
         mask = mask.astype(dtype) # C, H, W
         side, mask = get_sidemask(mask) # H, W, 3
         # print(img.shape, mask.shape)
@@ -73,11 +57,9 @@ def calc_loss(cfg, process_fn, dtype, loss_fn):
         pred_mask = np.load(os.path.join(pred_mask_dir, name+'.npy'))
         pred_mask = pred_mask > 0.5  # convert to binary mask
         pred_mask = pred_mask.astype(np.uint8)
-        if len(set(class_index.values())) == 6:
+        if classes == 6:
             pred_mask = bin_mask(pred_mask)
         pred_side, pred_mask = get_sidemask(pred_mask)
-        if topad:
-            pred_mask = zero_pad(pred_mask, factor, direction, padding)
         pred_mask = process_fn(pred_mask)
         if np.max(pred_mask) == 255:
             pred_mask = pred_mask / 255.

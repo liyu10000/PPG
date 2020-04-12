@@ -26,18 +26,11 @@ class Tester(object):
         self.batch_size = cfg.test_batch_size
         self.image_dir = cfg.test_image_dir
         self.label_dir = cfg.test_label_dir if cfg.test_label_dir != 'None' else None
-        self.W = cfg.W
-        self.H = cfg.H
         self.pred_mask_dir = cfg.pred_mask_dir
         os.makedirs(self.pred_mask_dir, exist_ok=True)
-        self.resize_with_pad = True if cfg.resize_with_pad == 'True' else False
-        if self.resize_with_pad:
-            self.mean = (0.415, 0.425, 0.496)
-            self.std = (0.294, 0.279, 0.293)
-        else:
-            self.mean = (0.442, 0.452, 0.526)
-            self.std = (0.282, 0.264, 0.273)
         self.val_interval = [0, 12]
+        self.mean = (0, 0, 0)
+        self.std = (1, 1, 1)
         self.device = torch.device('cuda:0')
         torch.set_default_tensor_type("torch.cuda.FloatTensor")
         torch.backends.cudnn.benchmark = True
@@ -59,10 +52,6 @@ class Tester(object):
                                     image_dir=self.image_dir,
                                     label_dir=self.label_dir,
                                     phase="test",
-                                    classes=self.classes,
-                                    W=self.W,
-                                    H=self.H,
-                                    pad=self.resize_with_pad,
                                     val_interval=self.val_interval,
                                     mean=self.mean,
                                     std=self.std,

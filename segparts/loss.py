@@ -115,7 +115,7 @@ def plot_train_log(epochs, train_metric, val_metric, save_name=None):
 
 
 if __name__ == '__main__':
-    train_log = '../dice_90p.out'
+    train_log = '../data/weights/exp_0409/bce_dice_90p.log'
     epochs, train_losses, val_losses, train_ious, val_ious = parse_train_log(train_log)
-    plot_train_log(epochs, train_losses, val_losses, '../dice_90p_loss.png')
-    plot_train_log(epochs, train_ious, val_ious, '../dice_90p_iou.png')
+    plot_train_log(epochs, train_losses, val_losses, '../data/weights/exp_0409/bce_dice_90p_loss.png')
+    plot_train_log(epochs, train_ious, val_ious, '../data/weights/exp_0409/bce_dice_90p_iou.png')

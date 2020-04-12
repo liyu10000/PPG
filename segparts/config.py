@@ -10,22 +10,20 @@ class Config:
     def initialize(self):
         ### Common configuration.
         self._parser.add_argument('--seed', type=int, default=42, help='set the random seed for random, np, and torch')
-        self._parser.add_argument('--image_dir', type=str, default='../data/labeled/images')
-        self._parser.add_argument('--label_dir', type=str, default='../data/labeled/labels')
-        self._parser.add_argument('--W', type=int, default=640, help='image width to resize to')
-        self._parser.add_argument('--H', type=int, default=480, help='image height to resize to')
+        self._parser.add_argument('--image_dir', type=str, default='../data/labeled/images_3cls')
+        self._parser.add_argument('--label_dir', type=str, default='../data/labeled/labels_3cls')
         self._parser.add_argument('--classes', type=int, default=3, choices=[6, 3, 1], help='number of classes')
         self._parser.add_argument('--model_path', type=str, default='./model.pth')
-        self._parser.add_argument('--resize_with_pad', type=str, default='True', choices=['True', 'False'])
-        self._parser.add_argument('--num_workers', type=int, default=8)
+        self._parser.add_argument('--num_workers', type=int, default=4)
         
         ### Training configuration.
         self._parser.add_argument('--loss', type=str, default='bce', choices=['bce', 'bce_dice', 'dice'])
-        self._parser.add_argument('--train_batch_size', type=int, default=8, help='batch size for training')
-        self._parser.add_argument('--val_batch_size', type=int, default=8, help='batch size for validation')
+        self._parser.add_argument('--train_batch_size', type=int, default=2, help='batch size for training')
+        self._parser.add_argument('--val_batch_size', type=int, default=2, help='batch size for validation')
         self._parser.add_argument('--accumulation_steps', type=int, default=32, help='number of steps to update params')
         self._parser.add_argument('--lr', type=float, default=0.0001)
         self._parser.add_argument('--num_epochs', type=int, default=30)
+        self._parser.add_argument('--save', type=str, default='best', choices=['best', 'all'])
         self._parser.add_argument('--resume', type=str, default='False', choices=['True', 'False'])
         self._parser.add_argument('--resume_from', type=int, default=0, help='number of epochs to start counting')
         

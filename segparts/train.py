@@ -1,5 +1,4 @@
 import os
-import cv2
 import time
 import random
 import warnings
@@ -34,17 +33,7 @@ class Trainer(object):
     def __init__(self, model, cfg):
         self.image_dir = cfg.image_dir
         self.label_dir = cfg.label_dir
-        self.W = cfg.W
-        self.H = cfg.H
-        self.classes = cfg.classes
         self.num_workers = cfg.num_workers
-        self.resize_with_pad = True if cfg.resize_with_pad == 'True' else False
-        if self.resize_with_pad:
-            self.mean = (0.415, 0.425, 0.496)
-            self.std = (0.294, 0.279, 0.293)
-        else:
-            self.mean = (0.442, 0.452, 0.526)
-            self.std = (0.282, 0.264, 0.273)
         self.batch_size = {"train": cfg.train_batch_size, "val": cfg.val_batch_size}
         self.accumulation_steps =  cfg.accumulation_steps // self.batch_size['train']
         self.lr = cfg.lr
@@ -52,25 +41,29 @@ class Trainer(object):
         self.num_epochs = cfg.num_epochs
         self.epoch = cfg.resume_from # the epoch to start counting
         os.makedirs(os.path.dirname(cfg.model_path), exist_ok=True)
-        self.start_model = cfg.model_path
-        self.save_model = cfg.model_path
+        self.save_all = True if cfg.save == 'all' else False # whether to save all epoch weights or just the best
+        self.save_prefix = os.path.splitext(cfg.model_path)[0]
+        self.best_model = cfg.model_path
         self.best_loss = float("inf")
         self.phases = ["train", "val"]
+        self.mean = (0.433, 0.445, 0.518)
+        self.std = (0.277, 0.254, 0.266)
         self.val_interval = []
         if self.num_epochs == 30:
-            self.val_interval = [0, 12]
+            self.val_interval = [0, 70]
         elif self.num_epochs == 60:
-            self.val_interval = [12, 24]
+            self.val_interval = [70, 140]
         else:
-            self.val_interval = [24, 36]
+            self.val_interval = [140, 210]
         self.device = torch.device('cuda:0')
         torch.set_default_tensor_type("torch.cuda.FloatTensor")
         self.net = model
         if self.resume:
-            checkpoint = torch.load(self.start_model)
+            checkpoint = torch.load(cfg.model_path)
             # self.epoch = checkpoint["epoch"] + 1  # it may not be the last epoch being runned
-            self.best_loss = checkpoint["best_loss"]
+            self.best_loss = checkpoint["loss"]
             self.net.load_state_dict(checkpoint["state_dict"])
+            print('loaded {}, current loss: {}'.format(cfg.model_path, self.best_loss))
         self.net = self.net.to(self.device)
         if cfg.loss == 'bce':
             self.criterion = bce_loss
@@ -85,10 +78,6 @@ class Trainer(object):
                 image_dir=self.image_dir,
                 label_dir=self.label_dir,
                 phase=phase,
-                classes=self.classes,
-                W=self.W,
-                H=self.H,
-                pad=self.resize_with_pad,
                 val_interval=self.val_interval,
                 mean=self.mean,
                 std=self.std,
@@ -102,9 +91,6 @@ class Trainer(object):
         images = images.to(self.device)
         targets = targets.to(self.device)
         outputs = self.net(images)
-        # print(images.size(), targets.size(), outputs.size())
-        # xx = targets.detach().cpu().numpy()
-        # print(np.min(xx), np.max(xx), np.mean(xx))
         loss = self.criterion(outputs, targets)
         return loss, outputs
 
@@ -143,16 +129,18 @@ class Trainer(object):
             with torch.no_grad():
                 val_loss = self.iterate(self.epoch, "val")
                 self.scheduler.step(val_loss)
+            state = {
+                "epoch": self.epoch,
+                "loss": self.val_loss,
+                "state_dict": self.net.state_dict(),
+                # "optimizer": self.optimizer.state_dict(),
+            }
+            if self.save_all:
+                torch.save(state, '{}_{}.pth'.format(self.save_prefix, str(self.epoch).zfill(3)))
             if val_loss < self.best_loss:
-                print("******** New optimal found, saving state ********")
+                print("******** New optimal found, saving best model ********")
                 self.best_loss = val_loss
-                state = {
-                    "epoch": self.epoch,
-                    "best_loss": self.best_loss,
-                    "state_dict": self.net.state_dict(),
-                    # "optimizer": self.optimizer.state_dict(),
-                }
-                torch.save(state, self.save_model)
+                torch.save(state, self.best_model)
             self.epoch += 1
             print()
 
