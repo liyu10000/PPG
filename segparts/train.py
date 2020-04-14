@@ -131,7 +131,7 @@ class Trainer(object):
                 self.scheduler.step(val_loss)
             state = {
                 "epoch": self.epoch,
-                "loss": self.val_loss,
+                "loss": val_loss,
                 "state_dict": self.net.state_dict(),
                 # "optimizer": self.optimizer.state_dict(),
             }

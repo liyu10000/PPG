@@ -43,7 +43,7 @@ class Tester(object):
             sys.exit()
         checkpoint = torch.load(best_model)
         self.epoch = checkpoint["epoch"]
-        self.best_loss = checkpoint["best_loss"]
+        self.best_loss = checkpoint["loss"]
         self.net.load_state_dict(checkpoint["state_dict"])
         self.net = self.net.to(self.device)
         self.net.eval()

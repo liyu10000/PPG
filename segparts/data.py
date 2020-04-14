@@ -48,8 +48,8 @@ def get_transforms(phase, mean, std):
                 HorizontalFlip(p=0.5),
                 # ShiftScaleRotate(shift_limit=0.0625, scale_limit=0.1, rotate_limit=10, border_mode=cv2.BORDER_CONSTANT, value=0, mask_value=0),
                 # RandomContrast(p=0.5),
-                # RandomBrightness(p=0.5),
-                # RandomBrightnessContrast(p=0.5),
+                RandomBrightness(p=0.5),
+                RandomBrightnessContrast(p=0.5),
             ]
         )
     list_transforms.extend(
