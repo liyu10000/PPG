@@ -17,8 +17,8 @@ __pycache__/
 
 *.pth
 
-/data
-/defects
+/dataparts
+/datadefects
 /meetings
 /papers
 /topology_aware_delineation
