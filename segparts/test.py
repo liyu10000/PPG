@@ -29,8 +29,8 @@ class Tester(object):
         self.pred_mask_dir = cfg.pred_mask_dir
         os.makedirs(self.pred_mask_dir, exist_ok=True)
         self.val_interval = [0, 12]
-        self.mean = (0, 0, 0)
-        self.std = (1, 1, 1)
+        self.mean = (0.433, 0.445, 0.518)
+        self.std = (0.277, 0.254, 0.266)
         self.device = torch.device('cuda:0')
         torch.set_default_tensor_type("torch.cuda.FloatTensor")
         torch.backends.cudnn.benchmark = True
@@ -42,8 +42,8 @@ class Tester(object):
             print('*****WARNING*****: {} does not exist.'.format(best_model))
             sys.exit()
         checkpoint = torch.load(best_model)
-        self.epoch = checkpoint["epoch"]
-        self.best_loss = checkpoint["loss"]
+        # self.epoch = checkpoint["epoch"]
+        # self.best_loss = checkpoint["loss"]
         self.net.load_state_dict(checkpoint["state_dict"])
         self.net = self.net.to(self.device)
         self.net.eval()
@@ -73,6 +73,11 @@ class Tester(object):
     def save(self, names, probs):
         for name, prob in zip(names, probs):
             np.save(os.path.join(self.pred_mask_dir, name+'.npy'), prob)
+            pred_mask = prob > 0.5  # convert to binary mask
+            pred_mask = pred_mask.astype(np.uint8)
+            pred_mask = pred_mask * 255
+            pred_mask = pred_mask.transpose((1, 2, 0))
+            cv2.imwrite(os.path.join(self.pred_mask_dir, name+'.png'), pred_mask)
 
     def start(self):
         with torch.no_grad():

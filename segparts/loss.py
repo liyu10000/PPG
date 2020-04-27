@@ -4,7 +4,7 @@ import torch.nn.functional as F
 from torch.autograd import Function
 import matplotlib.pyplot as plt
 
-classes = 3
+classes = 1
 
 class DiceCoeff(Function):
     """Dice coeff for individual examples"""
@@ -115,7 +115,7 @@ def plot_train_log(epochs, train_metric, val_metric, save_name=None):
 
 
 if __name__ == '__main__':
-    train_log = '../data/weights/exp_0412/bce_dice_aug.log'
+    train_log = '../dataparts/exps/exp5/models/train.log'
     epochs, train_losses, val_losses, train_ious, val_ious = parse_train_log(train_log)
-    plot_train_log(epochs, train_losses, val_losses, '../data/weights/exp_0412/bce_dice_aug_loss.png')
-    plot_train_log(epochs, train_ious, val_ious, '../data/weights/exp_0412/bce_dice_aug_iou.png')
+    plot_train_log(epochs, train_losses, val_losses, '../dataparts/exps/exp5/models/loss.png')
+    plot_train_log(epochs, train_ious, val_ious, '../dataparts/exps/exp5/models/iou.png')

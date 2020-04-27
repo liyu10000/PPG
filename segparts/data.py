@@ -76,11 +76,13 @@ class PPGDataset(Dataset):
     def __getitem__(self, idx):
         name = self.names[idx]
         img = cv2.imread(os.path.join(self.image_dir, name+'.png'))
-        mask = cv2.imread(os.path.join(self.label_dir, name+'.png'))
+        mask = cv2.imread(os.path.join(self.label_dir, name+'.png'), cv2.IMREAD_UNCHANGED)
         augmented = self.transforms(image=img, mask=mask)
-        img = augmented['image']
-        mask = augmented['mask'] # 1xHxWxC
-        mask = mask[0].permute(2, 0, 1) # CxHxW
+        img = augmented['image'] # CxHxW
+        mask = augmented['mask'] # 1xHxWxC or 1xHxW
+        # print(img.shape, mask.shape)
+        if len(mask.shape) == 4: # when mask is non-grayscale
+            mask = mask[0].permute(2, 0, 1) # CxHxW
         return name, img, mask
 
     def __len__(self):
@@ -109,7 +111,7 @@ def generator(
     else:
         sample_keys = keys[val_interval1:val_interval2]
     # sample_keys = keys  # use all data for train & val
-    print(phase, len(sample_keys), sample_keys)
+    print(phase, len(sample_keys))
     dataset = PPGDataset(sample_keys, image_dir, label_dir, phase, mean, std)
     dataloader = DataLoader(
         dataset,

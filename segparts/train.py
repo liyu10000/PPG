@@ -91,6 +91,7 @@ class Trainer(object):
         images = images.to(self.device)
         targets = targets.to(self.device)
         outputs = self.net(images)
+        # print(outputs.shape, targets.shape)
         loss = self.criterion(outputs, targets)
         return loss, outputs
 

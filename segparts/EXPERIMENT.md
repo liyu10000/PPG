@@ -59,3 +59,18 @@
 
  - Result
 1. Results are reasonably good, though not as good as the one from *Exp3*.
+
+
+### Exp5 (04/26/2020)
+ - Idea
+1. Augment data by varied JPEG compressions.
+2. Manually labeled the whole ship.
+3. One-class segmentation.
+4. All data are resized without padding.
+
+ - Config
+1. Total number of images is 685. Validate on 70 images, train on the rest (615).
+2. One round of train-val is enough. Final # epochs is 30.
+
+ - Result
+1. Results are very good. Will use it as the base mask to work on.
