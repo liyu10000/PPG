@@ -96,7 +96,6 @@ def generator(
             val_interval,
             mean,
             std,
-            shuffle=True,
             batch_size=8,
             num_workers=4,
             ):
@@ -118,7 +117,7 @@ def generator(
         batch_size=batch_size,
         num_workers=num_workers,
         pin_memory=True,
-        shuffle=shuffle,   
+        shuffle=(phase=='train'),   
     )
     return dataloader
 

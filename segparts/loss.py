@@ -115,7 +115,7 @@ def plot_train_log(epochs, train_metric, val_metric, save_name=None):
 
 
 if __name__ == '__main__':
-    train_log = '../dataparts/exps/exp5/models/train.log'
+    train_log = '../dataparts/exps/exp6/models/train.log'
     epochs, train_losses, val_losses, train_ious, val_ious = parse_train_log(train_log)
-    plot_train_log(epochs, train_losses, val_losses, '../dataparts/exps/exp5/models/loss.png')
-    plot_train_log(epochs, train_ious, val_ious, '../dataparts/exps/exp5/models/iou.png')
+    plot_train_log(epochs, train_losses, val_losses, '../dataparts/exps/exp6/models/loss.png')
+    plot_train_log(epochs, train_ious, val_ious, '../dataparts/exps/exp6/models/iou.png')

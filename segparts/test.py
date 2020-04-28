@@ -55,7 +55,6 @@ class Tester(object):
                                     val_interval=self.val_interval,
                                     mean=self.mean,
                                     std=self.std,
-                                    shuffle=False,
                                     batch_size=self.batch_size,
                                     num_workers=self.num_workers,
                                     )
