@@ -63,10 +63,11 @@
 
 ### Exp5 (04/26/2020)
  - Idea
-1. Augment data by varied JPEG compressions.
-2. Manually labeled the whole ship.
+1. Manually labeled the whole ship, stored in *labels_whole* directory.
+2. Augment data by varied JPEG compressions.
 3. One-class segmentation.
 4. All data are resized without padding.
+5. BCE-DICE loss.
 
  - Config
 1. Total number of images is 685. Validate on 70 images, train on the rest (615).
@@ -74,3 +75,19 @@
 
  - Result
 1. Results are very good. Will use it as the base mask to work on.
+
+
+### Exp6 (04/27/2020)
+ - Idea
+1. Manually labeled three parts on myself, stored in *labels_new* directory, new training labels in *labels_3cls_new* directory.
+2. Augment data.
+3. Three-class segmentation.
+4. Without padding.
+5. BCE-DICE loss.
+
+ - Config
+1. Total number of images is 685. Validate on 70 images, train on the rest (615).
+2. One round of train-val is enough. Final # epochs is 30.
+
+ - Result
+1. Results are really bad. Something much be wrong.
