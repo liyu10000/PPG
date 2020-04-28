@@ -107,8 +107,8 @@ def slice(data_dir, save_dir, step_size, patch_size):
     files = os.listdir(image_dir)
     assert len(files) == len(os.listdir(label_dir))
     for f in files:
-        print('Processing', basename)
         basename = os.path.splitext(f)[0]
+        print('Processing', basename)
         image_path = os.path.join(image_dir, f)
         label_path = os.path.join(label_dir, f)
         img = cv2.imread(image_path)
@@ -118,6 +118,8 @@ def slice(data_dir, save_dir, step_size, patch_size):
             for w in range(0, W-patch_size, step_size):
                 img_patch = img[h:h+patch_size, w:w+patch_size]
                 mask_patch = mask[h:h+patch_size, w:w+patch_size]
+                if np.sum(mask_patch) == 0: # ignore blank patches
+                    continue
                 image_path2 = os.path.join(image_dir2, '{}_H{}_W{}_h{}_w{}.png'.format(basename, H, W, h, w))
                 label_path2 = os.path.join(label_dir2, '{}_H{}_W{}_h{}_w{}.png'.format(basename, H, W, h, w))
                 cv2.imwrite(image_path2, img_patch)
@@ -168,14 +170,19 @@ if __name__ == '__main__':
     #     print('Processing', f)
     #     show_labels(f, file_dict, save_dir)
 
-    # slice images/labels into small patches
-    patch_size = 224
-    step_size = patch_size // 2
-    data_dir = '../datadefects/lowquality'
-    save_dir = '../datadefects/lowquality-224'
-    slice(data_dir, save_dir, step_size, patch_size)
+    # # slice images/labels into small patches
+    # patch_size = 224
+    # step_size = patch_size // 2
+    # data_dir = '../datadefects/lowquality'
+    # save_dir = '../datadefects/lowquality-224'
+    # slice(data_dir, save_dir, step_size, patch_size)
 
-    # # joint patches back to big images
-    # patch_dir = '../datadefects/exps/exp1/pred_masks'
-    # save_dir = '../datadefects/exps/exp1/pred_masks_joint'
-    # joint(patch_dir, save_dir)
+    # joint patches back to big images
+    patch_dir = '../datadefects/exps/exp2/bce_high_pred_masks'
+    save_dir = '../datadefects/exps/exp2/bce_high_pred_masks_joint'
+    joint(patch_dir, save_dir)
+
+    # joint patches back to big images
+    patch_dir = '../datadefects/exps/exp2/bce_low_pred_masks'
+    save_dir = '../datadefects/exps/exp2/bce_low_pred_masks_joint'
+    joint(patch_dir, save_dir)

@@ -93,19 +93,19 @@ def generator(
             phase,
             mean,
             std,
-            shuffle=True,
             batch_size=8,
             num_workers=4,
             ):
     keys = [f[:-4] for f in os.listdir(image_dir) if f.endswith('.png')]
     random.Random(seed).shuffle(keys) # shuffle with seed, so that yielding same sampling
+    print(phase, len(keys))
     dataset = PPGDataset(keys, image_dir, label_dir, phase, mean, std)
     dataloader = DataLoader(
         dataset,
         batch_size=batch_size,
         num_workers=num_workers,
         pin_memory=True,
-        shuffle=shuffle,   
+        shuffle=(phase=='train'),   
     )
     return dataloader
 
