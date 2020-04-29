@@ -46,8 +46,6 @@ class Trainer(object):
         self.best_model = cfg.model_path
         self.best_loss = float("inf")
         self.phases = ["train", "val"]
-        self.mean = (0.433, 0.445, 0.518)
-        self.std = (0.277, 0.254, 0.266)
         self.device = torch.device('cuda:0')
         torch.set_default_tensor_type("torch.cuda.FloatTensor")
         self.net = model
@@ -71,8 +69,6 @@ class Trainer(object):
                 image_dir=self.image_dir,
                 label_dir=self.label_dir,
                 phase=phase,
-                mean=self.mean,
-                std=self.std,
                 batch_size=self.batch_size[phase],
                 num_workers=self.num_workers,
             )

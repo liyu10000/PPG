@@ -40,7 +40,9 @@ def calc_mean_std(dataset):
     return pixel_mean, pixel_std
 
 
-def get_transforms(phase, mean, std):
+def get_transforms(phase):
+    mean = (0.433, 0.445, 0.518)
+    std = (0.277, 0.254, 0.266)
     list_transforms = []
     if phase == "train":
         list_transforms.extend(
@@ -64,14 +66,12 @@ def get_transforms(phase, mean, std):
 
 ### Dataloader
 class PPGDataset(Dataset):
-    def __init__(self, names, image_dir, label_dir, phase, mean, std):
+    def __init__(self, names, image_dir, label_dir, phase):
         self.names = names
         self.image_dir = image_dir
         self.label_dir = label_dir
-        self.mean = mean
-        self.std = std
         self.phase = phase
-        self.transforms = get_transforms(phase, mean, std)
+        self.transforms = get_transforms(phase)
 
     def __getitem__(self, idx):
         name = self.names[idx]
@@ -94,8 +94,6 @@ def generator(
             label_dir,
             phase,
             val_interval,
-            mean,
-            std,
             batch_size=8,
             num_workers=4,
             ):
@@ -111,7 +109,7 @@ def generator(
         sample_keys = keys[val_interval1:val_interval2]
     # sample_keys = keys  # use all data for train & val
     print(phase, len(sample_keys))
-    dataset = PPGDataset(sample_keys, image_dir, label_dir, phase, mean, std)
+    dataset = PPGDataset(sample_keys, image_dir, label_dir, phase)
     dataloader = DataLoader(
         dataset,
         batch_size=batch_size,
@@ -126,28 +124,28 @@ def generator(
 if __name__ == "__main__":
     # test dataloader
     image_dir = "../data/labeled/images_3cls"
-    label_dir = "../data/labeled/labels_3cls"
+    label_dir = "../data/labeled/labels_3cls_new"
     phase = "val"
     mean = (0.0, 0.0, 0.0)
     std = (1.0, 1.0, 1.0)
     keys = [f[:-4] for f in os.listdir(image_dir) if f.endswith('.png')]
-    dataset = PPGDataset(keys, image_dir, label_dir, phase, mean, std)
+    dataset = PPGDataset(keys, image_dir, label_dir, phase)
 
-    # # output mask as img for checking
-    # tmp_dir = './tmp'
-    # os.makedirs(tmp_dir, exist_ok=True)
-    # print('# files', len(dataset))
-    # for i in range(len(dataset)):
-    #     name, img, mask = dataset[i]
-    #     print(name, img.shape, mask.shape)
+    # output mask as img for checking
+    tmp_dir = './tmp'
+    os.makedirs(tmp_dir, exist_ok=True)
+    print('# files', len(dataset))
+    for i in range(len(dataset)):
+        name, img, mask = dataset[i]
+        print(name, img.shape, mask.shape)
         
-    #     img = img.numpy().transpose((1, 2, 0))
-    #     mask = mask.numpy().transpose((1, 2, 0))
-    #     img *= 255
-    #     mask *= 255
-    #     cv2.imwrite(os.path.join(tmp_dir, name+'.jpg'), img)
-    #     cv2.imwrite(os.path.join(tmp_dir, name+'_mask.jpg'), mask)
-    #     break
+        img = img.numpy().transpose((1, 2, 0))
+        mask = mask.numpy().transpose((1, 2, 0))
+        img *= 255
+        mask *= 255
+        cv2.imwrite(os.path.join(tmp_dir, name+'.jpg'), img)
+        cv2.imwrite(os.path.join(tmp_dir, name+'_mask.jpg'), mask)
+        break
 
     # # calculate mean and std of dataset
     # mean, std = calc_mean_std(dataset)

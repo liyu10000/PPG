@@ -40,7 +40,9 @@ def calc_mean_std(dataset):
     return pixel_mean, pixel_std
 
 
-def get_transforms(phase, mean, std):
+def get_transforms(phase):
+    mean = (0.433, 0.445, 0.518)
+    std = (0.277, 0.254, 0.266)
     list_transforms = []
     if phase == "train":
         list_transforms.extend(
@@ -64,14 +66,12 @@ def get_transforms(phase, mean, std):
 
 ### Dataloader
 class PPGDataset(Dataset):
-    def __init__(self, names, image_dir, label_dir, phase, mean, std):
+    def __init__(self, names, image_dir, label_dir, phase):
         self.names = names
         self.image_dir = image_dir
         self.label_dir = label_dir
-        self.mean = mean
-        self.std = std
         self.phase = phase
-        self.transforms = get_transforms(phase, mean, std)
+        self.transforms = get_transforms(phase)
 
     def __getitem__(self, idx):
         name = self.names[idx]
@@ -99,7 +99,7 @@ def generator(
     keys = [f[:-4] for f in os.listdir(image_dir) if f.endswith('.png')]
     random.Random(seed).shuffle(keys) # shuffle with seed, so that yielding same sampling
     print(phase, len(keys))
-    dataset = PPGDataset(keys, image_dir, label_dir, phase, mean, std)
+    dataset = PPGDataset(keys, image_dir, label_dir, phase)
     dataloader = DataLoader(
         dataset,
         batch_size=batch_size,
@@ -119,7 +119,7 @@ if __name__ == "__main__":
     mean = (0.0, 0.0, 0.0)
     std = (1.0, 1.0, 1.0)
     keys = [f[:-4] for f in os.listdir(image_dir) if f.endswith('.png')]
-    dataset = PPGDataset(keys, image_dir, label_dir, phase, mean, std)
+    dataset = PPGDataset(keys, image_dir, label_dir, phase)
 
     # # output mask as img for checking
     # tmp_dir = './tmp'

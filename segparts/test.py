@@ -29,8 +29,6 @@ class Tester(object):
         self.pred_mask_dir = cfg.pred_mask_dir
         os.makedirs(self.pred_mask_dir, exist_ok=True)
         self.val_interval = [0, 12]
-        self.mean = (0.433, 0.445, 0.518)
-        self.std = (0.277, 0.254, 0.266)
         self.device = torch.device('cuda:0')
         torch.set_default_tensor_type("torch.cuda.FloatTensor")
         torch.backends.cudnn.benchmark = True
@@ -53,8 +51,6 @@ class Tester(object):
                                     label_dir=self.label_dir,
                                     phase="test",
                                     val_interval=self.val_interval,
-                                    mean=self.mean,
-                                    std=self.std,
                                     batch_size=self.batch_size,
                                     num_workers=self.num_workers,
                                     )

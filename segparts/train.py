@@ -46,8 +46,6 @@ class Trainer(object):
         self.best_model = cfg.model_path
         self.best_loss = float("inf")
         self.phases = ["train", "val"]
-        self.mean = (0.433, 0.445, 0.518)
-        self.std = (0.277, 0.254, 0.266)
         self.val_interval = []
         if self.num_epochs == 30:
             self.val_interval = [0, 70]
@@ -79,8 +77,6 @@ class Trainer(object):
                 label_dir=self.label_dir,
                 phase=phase,
                 val_interval=self.val_interval,
-                mean=self.mean,
-                std=self.std,
                 batch_size=self.batch_size[phase],
                 num_workers=self.num_workers,
             )
