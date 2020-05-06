@@ -59,7 +59,7 @@ class Trainer(object):
         if self.resume:
             checkpoint = torch.load(cfg.model_path)
             # self.epoch = checkpoint["epoch"] + 1  # it may not be the last epoch being runned
-            self.best_loss = checkpoint["loss"]
+            self.best_loss = checkpoint["best_loss"]
             self.net.load_state_dict(checkpoint["state_dict"])
             print('loaded {}, current loss: {}'.format(cfg.model_path, self.best_loss))
         self.net = self.net.to(self.device)

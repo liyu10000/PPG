@@ -50,8 +50,8 @@ def get_transforms(phase):
                 HorizontalFlip(p=0.5),
                 # ShiftScaleRotate(shift_limit=0.0625, scale_limit=0.1, rotate_limit=10, border_mode=cv2.BORDER_CONSTANT, value=0, mask_value=0),
                 # RandomContrast(p=0.5),
-                RandomBrightness(p=0.5),
-                RandomBrightnessContrast(p=0.5),
+                # RandomBrightness(p=0.5),
+                # RandomBrightnessContrast(p=0.5),
             ]
         )
     list_transforms.extend(
@@ -123,8 +123,8 @@ def generator(
 
 if __name__ == "__main__":
     # test dataloader
-    image_dir = "../data/labeled/images_3cls"
-    label_dir = "../data/labeled/labels_3cls_new"
+    image_dir = "../dataparts/Segmentation_Test_Set/images_3cls"
+    label_dir = "../dataparts/Segmentation_Test_Set/labels_3cls_new"
     phase = "val"
     mean = (0.0, 0.0, 0.0)
     std = (1.0, 1.0, 1.0)
@@ -145,7 +145,7 @@ if __name__ == "__main__":
         mask *= 255
         cv2.imwrite(os.path.join(tmp_dir, name+'.jpg'), img)
         cv2.imwrite(os.path.join(tmp_dir, name+'_mask.jpg'), mask)
-        break
+        # break
 
     # # calculate mean and std of dataset
     # mean, std = calc_mean_std(dataset)
