@@ -6,6 +6,7 @@ import random
 import warnings
 import numpy as np
 import pandas as pd
+from tqdm import tqdm
 import segmentation_models_pytorch as smp
 from matplotlib import pyplot as plt
 import torch
@@ -74,11 +75,10 @@ class Tester(object):
 
     def start(self):
         with torch.no_grad():
-            for i, batch in enumerate(self.dataloader):
+            for batch in tqdm(self.dataloader):
                 names, images, _ = batch
                 probs = self.forward(images)
                 self.save(names, probs)
-                print("Finished batch {}:".format(i))
 
 
 if __name__ == '__main__':

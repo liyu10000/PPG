@@ -90,13 +90,15 @@ def show_labels(f, file_dict, save_dir=None):
         mask = cv2.cvtColor(mask, cv2.COLOR_RGB2BGR)
         cv2.imwrite(save_name, mask)
 
-def slice(data_dir, save_dir, step_size, patch_size):
+def slice(data_dir, save_dir, step_size, patch_size, binary=True, whole_mask_dir=None):
     """ Slice image&mask pairs into small patches
     @params
         data_dir: directory with two folders: images, labels
         save_dir: directory to save patches of images and labels
         step_size: step size at slicing
         patch_size: patch size
+        binary: whether or not to save masks as binary or RGB
+        whole_mask_dir: directory with whole vessel segmentation masks
     """
     image_dir = os.path.join(data_dir, 'images')
     label_dir = os.path.join(data_dir, 'labels')
@@ -111,18 +113,29 @@ def slice(data_dir, save_dir, step_size, patch_size):
         print('Processing', basename)
         image_path = os.path.join(image_dir, f)
         label_path = os.path.join(label_dir, f)
+        if whole_mask_dir is not None:
+            whole_path = os.path.join(whole_mask_dir, f)
+            whole = cv2.imread(whole_path)
         img = cv2.imread(image_path)
         mask = cv2.imread(label_path)
         H, W, _ = img.shape
-        for h in range(0, H-patch_size, step_size):
-            for w in range(0, W-patch_size, step_size):
+        for h in range(0, H, step_size):
+            for w in range(0, W, step_size):
+                if h+patch_size > H:
+                    h = H - patch_size
+                if w+patch_size > W:
+                    w = W - patch_size
                 img_patch = img[h:h+patch_size, w:w+patch_size]
                 mask_patch = mask[h:h+patch_size, w:w+patch_size]
-                if np.sum(mask_patch) == 0: # ignore blank patches
-                    continue
+                if whole_mask_dir is not None:
+                    whole_patch = whole[h:h+patch_size, w:w+patch_size]
+                    if np.sum(whole_patch) == 0: # ignore blank patches
+                        continue
                 image_path2 = os.path.join(image_dir2, '{}_H{}_W{}_h{}_w{}.png'.format(basename, H, W, h, w))
                 label_path2 = os.path.join(label_dir2, '{}_H{}_W{}_h{}_w{}.png'.format(basename, H, W, h, w))
                 cv2.imwrite(image_path2, img_patch)
+                if binary: # convert to binary mask
+                    mask_patch = np.sum(mask_patch, axis=2)
                 cv2.imwrite(label_path2, mask_patch)
 
 def joint(patch_dir, save_dir):
@@ -163,7 +176,7 @@ def joint(patch_dir, save_dir):
 
 if __name__ == '__main__':
     # # read csv files and generate masks
-    # data_dir = '../datadefects/lowquality-raw/'
+    # data_dir = '../datadefects/raw/lowquality'
     # file_dict = parse_dir(data_dir)
     # save_dir = '../datadefects/lowquality/labels'
     # for f in file_dict:
@@ -175,14 +188,16 @@ if __name__ == '__main__':
     # step_size = patch_size // 2
     # data_dir = '../datadefects/lowquality'
     # save_dir = '../datadefects/lowquality-224'
-    # slice(data_dir, save_dir, step_size, patch_size)
+    # binary = True
+    # whole_mask_dir = '../datadefects/labels_whole'
+    # slice(data_dir, save_dir, step_size, patch_size, binary, whole_mask_dir)
 
     # joint patches back to big images
-    patch_dir = '../datadefects/exps/exp2/bce_high_pred_masks'
-    save_dir = '../datadefects/exps/exp2/bce_high_pred_masks_joint'
+    patch_dir = '../datadefects/exps/exp3/bce_dice_high_pred_masks'
+    save_dir = '../datadefects/exps/exp3/bce_dice_high_pred_masks_joint'
     joint(patch_dir, save_dir)
 
     # joint patches back to big images
-    patch_dir = '../datadefects/exps/exp2/bce_low_pred_masks'
-    save_dir = '../datadefects/exps/exp2/bce_low_pred_masks_joint'
+    patch_dir = '../datadefects/exps/exp3/bce_dice_low_pred_masks'
+    save_dir = '../datadefects/exps/exp3/bce_dice_low_pred_masks_joint'
     joint(patch_dir, save_dir)

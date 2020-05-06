@@ -4,7 +4,7 @@ import torch.nn.functional as F
 from torch.autograd import Function
 import matplotlib.pyplot as plt
 
-classes = 3
+classes = 1
 
 class DiceCoeff(Function):
     """Dice coeff for individual examples"""
