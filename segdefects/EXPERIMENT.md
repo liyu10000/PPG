@@ -36,8 +36,11 @@
 2. Run *1-class* segmentation
 
  - Config
-1. Use high-quality or low-quality cases separately.
-2. Train and test on all data.
+1. Use high-quality or low-quality cases separately. 
+2. Also set aside 5 images and train on remaining high-quality set or low-quality set.
+3. Also use half of low-quality set for training and test on 5 high-q images.
 3. Run 30 epochs.
+4. BCE-DICE loss.
 
  - Result
+1. Naming conventions: high (train on high and test on high), high2low (train on high and test on low), low (train on low and test on low), low2high (train on low and test on high), high2five (train on reduced high and test on five high), low2five (train on low and test five high), lowhalf2five (train on half low and test on five high).
