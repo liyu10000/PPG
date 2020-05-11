@@ -45,7 +45,7 @@ def _evaluate(true_mask, pred_mask, same_channel):
 def evaluate(true_dir, pred_dir, same_channel=False):
     true_masks = os.listdir(true_dir)
     pred_masks = os.listdir(pred_dir)
-    print('# files in {}:{}, # files in {}:{}'.format(true_dir, len(true_masks), pred_dir, len(pred_masks)))
+    print('# true files in {}:{}\n# pred files in {}:{}'.format(true_dir, len(true_masks), pred_dir, len(pred_masks)))
     true_masks.sort()
     pred_masks.sort()
     precision, recall = [], []
@@ -72,7 +72,7 @@ def evaluate(true_dir, pred_dir, same_channel=False):
 
 
 if __name__ == '__main__':
-    true_dir = '/home/liyu/HDD1T/PPG/datadefects/highquality/labels'
-    pred_dir = '/home/liyu/HDD1T/PPG/datadefects/exps/exp3/bce_dice_lowhalf2five_pred_masks_joint'
+    true_dir = '../datadefects/lowquality/labels'
+    pred_dir = '../datadefects/exps/exp4/bce_dice_lowq_joint'
     same_channel = False
     evaluate(true_dir, pred_dir, same_channel)

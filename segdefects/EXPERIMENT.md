@@ -56,3 +56,4 @@
 3. BCE-DICE loss.
 
  - Result
+1. There is obvious improvement on low-quality data, whereas less improvement on high-quality data.

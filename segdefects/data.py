@@ -95,8 +95,12 @@ def generator(
             batch_size=8,
             num_workers=4,
             ):
-    image_dir = image_dir[1:]
-    label_dir = label_dir[1:]
+    if isinstance(image_dir, list):
+        image_dir = image_dir[1:]
+        label_dir = label_dir[1:]
+    else:
+        image_dir = [image_dir]
+        label_dir = [label_dir]
     pairs = []
     for img_dir, lbl_dir in zip(image_dir, label_dir):
         keys = [f for f in os.listdir(img_dir) if f.endswith('.png')]
