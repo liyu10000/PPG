@@ -66,17 +66,16 @@ def get_transforms(phase):
 
 ### Dataloader
 class PPGDataset(Dataset):
-    def __init__(self, names, image_dir, label_dir, phase):
-        self.names = names
-        self.image_dir = image_dir
-        self.label_dir = label_dir
+    def __init__(self, pairs, phase):
+        self.pairs = pairs
         self.phase = phase
         self.transforms = get_transforms(phase)
 
     def __getitem__(self, idx):
-        name = self.names[idx]
-        img = cv2.imread(os.path.join(self.image_dir, name+'.png'))
-        mask = cv2.imread(os.path.join(self.label_dir, name+'.png'), cv2.IMREAD_UNCHANGED)
+        pair = self.pairs[idx]
+        name = pair[0]
+        img = cv2.imread(pair[1])
+        mask = cv2.imread(pair[2], cv2.IMREAD_UNCHANGED)
         augmented = self.transforms(image=img, mask=mask)
         img = augmented['image'] # CxHxW
         mask = augmented['mask'] # 1xHxWxC or 1xHxW
@@ -86,7 +85,7 @@ class PPGDataset(Dataset):
         return name, img, mask
 
     def __len__(self):
-        return len(self.names)
+        return len(self.pairs)
 
 
 def generator(
@@ -96,10 +95,15 @@ def generator(
             batch_size=8,
             num_workers=4,
             ):
-    keys = [f[:-4] for f in os.listdir(image_dir) if f.endswith('.png')]
-    random.Random(seed).shuffle(keys) # shuffle with seed, so that yielding same sampling
-    print(phase, len(keys))
-    dataset = PPGDataset(keys, image_dir, label_dir, phase)
+    image_dir = image_dir[1:]
+    label_dir = label_dir[1:]
+    pairs = []
+    for img_dir, lbl_dir in zip(image_dir, label_dir):
+        keys = [f for f in os.listdir(img_dir) if f.endswith('.png')]
+        pairs += [(f[:-4], os.path.join(img_dir, f), os.path.join(lbl_dir, f)) for f in keys]
+    random.Random(seed).shuffle(pairs) # shuffle with seed, so that yielding same sampling
+    print(phase, len(pairs))
+    dataset = PPGDataset(pairs, phase)
     dataloader = DataLoader(
         dataset,
         batch_size=batch_size,

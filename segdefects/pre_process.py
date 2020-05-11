@@ -192,12 +192,12 @@ if __name__ == '__main__':
     # whole_mask_dir = '../datadefects/labels_whole'
     # slice(data_dir, save_dir, step_size, patch_size, binary, whole_mask_dir)
 
-    # # joint patches back to big images
-    # patch_dir = '../datadefects/exps/exp3/bce_dice_high2five_pred_masks'
-    # save_dir = '../datadefects/exps/exp3/bce_dice_high2five_pred_masks_joint'
-    # joint(patch_dir, save_dir)
+    # joint patches back to big images
+    patch_dir = '../datadefects/exps/exp4/bce_dice_highq'
+    save_dir = '../datadefects/exps/exp4/bce_dice_highq_joint'
+    joint(patch_dir, save_dir)
 
     # joint patches back to big images
-    patch_dir = '../datadefects/exps/exp3/bce_dice_lowhalf2five_pred_masks'
-    save_dir = '../datadefects/exps/exp3/bce_dice_lowhalf2five_pred_masks_joint'
+    patch_dir = '../datadefects/exps/exp4/bce_dice_lowq'
+    save_dir = '../datadefects/exps/exp4/bce_dice_lowq_joint'
     joint(patch_dir, save_dir)

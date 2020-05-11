@@ -44,3 +44,15 @@
 
  - Result
 1. Naming conventions: high (train on high and test on high), high2low (train on high and test on low), low (train on low and test on low), low2high (train on low and test on high), high2five (train on reduced high and test on five high), low2five (train on low and test five high), lowhalf2five (train on half low and test on five high).
+
+
+### Exp4 (05/10/2020)
+ - Idea
+1. Same as *Exp3*.
+
+ - Config
+1. Use high-quality and low-quality data together at training.
+2. Run 30 epochs.
+3. BCE-DICE loss.
+
+ - Result

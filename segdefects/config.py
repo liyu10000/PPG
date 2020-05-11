@@ -10,8 +10,8 @@ class Config:
     def initialize(self):
         ### Common configuration.
         self._parser.add_argument('--seed', type=int, default=42, help='set the random seed for random, np, and torch')
-        self._parser.add_argument('--image_dir', type=str, default='../datadefects/highquality/images')
-        self._parser.add_argument('--label_dir', type=str, default='../datadefects/highquality/labels')
+        self._parser.add_argument('--image_dir', action='append', default=['path/to/images'])
+        self._parser.add_argument('--label_dir', action='append', default=['path/to/labels'])
         self._parser.add_argument('--classes', type=int, default=3, choices=[3, 1], help='number of classes')
         self._parser.add_argument('--model_path', type=str, default='./model.pth')
         self._parser.add_argument('--num_workers', type=int, default=4)
@@ -31,9 +31,9 @@ class Config:
         self._parser.add_argument('--test_batch_size', type=int, default=32, help='batch size for testing')
         
         ## test on train
-        self._parser.add_argument('--test_image_dir', type=str, default='../datadefects/highquality/images')
-        self._parser.add_argument('--test_label_dir', type=str, default='../datadefects/highquality/labels')
-        self._parser.add_argument('--pred_mask_dir', type=str, default='../datadefects/highquality/pred_masks')
+        self._parser.add_argument('--test_image_dir', type=str, default='path/to/images')
+        self._parser.add_argument('--test_label_dir', type=str, default='path/to/labels')
+        self._parser.add_argument('--pred_mask_dir', type=str, default='path/to/pred_masks')
     
 
     def parse(self):
