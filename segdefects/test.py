@@ -51,6 +51,8 @@ class Tester(object):
                                     image_dir=self.image_dir,
                                     label_dir=self.label_dir,
                                     phase="test",
+                                    classes=self.classes,
+                                    weight=[],
                                     batch_size=self.batch_size,
                                     num_workers=self.num_workers,
                                     )
@@ -77,7 +79,7 @@ class Tester(object):
     def start(self):
         with torch.no_grad():
             for batch in tqdm(self.dataloader):
-                names, images, _ = batch
+                names, images, _, _ = batch
                 probs = self.forward(images)
                 self.save(names, probs)
 

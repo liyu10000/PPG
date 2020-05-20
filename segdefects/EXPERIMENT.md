@@ -61,7 +61,7 @@
 
 ### Exp5 (05/18/2020)
  - Idea
-1. Train on high-q and low-q data together at training, except 5 high-q images as test set.
+1. Train on high-q and low-q data together, except 5 high-q images as test set.
 
  - Config
 1. Run 30 epochs.
@@ -74,10 +74,23 @@
 ### Exp6 (05/19/2020)
  - Idea
 1. *3-class* segmentation.
-2. Crop patches based on vessel shape.
-3. Train on high-q and low-q data together at training, except 5 high-q images as test set.
+2. Cut patches based on vessel shape.
+3. Train on high-q and low-q data together, except 5 high-q images as test set.
 
  - Config
-1. Run 30 epochs.
+1. Run 30 epochs. Extend to 90 epochs.
 2. BCE-DICE loss.
+
+ - Result
+1. Segments at 30 epoches are bad. Almost all patches are identified as defects.
+2. Segments at 90 epoches.
+
+
+### Exp7 (05/20/2020)
+ - Idea
+1. *1-class* segmentation. 
+2. Assign weights to different types of defects.
+3. Train on high-q and low-q data combined, except 5 high-q images as test set.
+
+ - Config
 

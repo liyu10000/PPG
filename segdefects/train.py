@@ -32,6 +32,7 @@ torch.backends.cudnn.benchmark = True
 class Trainer(object):
     '''This class takes care of training and validation of our model'''
     def __init__(self, model, cfg):
+        self.classes = cfg.classes
         self.image_dir = cfg.image_dir
         self.label_dir = cfg.label_dir
         self.num_workers = cfg.num_workers
@@ -57,6 +58,7 @@ class Trainer(object):
             self.net.load_state_dict(checkpoint["state_dict"])
             print('loaded {}, current loss: {}'.format(cfg.model_path, self.best_loss))
         self.net = self.net.to(self.device)
+        self.weight = cfg.weight.split(',') if cfg.weight != '' else []
         if cfg.loss == 'bce':
             self.criterion = bce_loss
         elif cfg.loss == 'bce_dice':
@@ -70,17 +72,29 @@ class Trainer(object):
                 image_dir=self.image_dir,
                 label_dir=self.label_dir,
                 phase=phase,
+                classes=self.classes,
+                weight=self.weight,
                 batch_size=self.batch_size[phase],
                 num_workers=self.num_workers,
             )
             for phase in self.phases
         }
         
-    def forward(self, images, targets):
+    def forward(self, images, targets, weights):
+        """
+        @params
+            images: N,C,H,W
+            targets: N,C,H,W
+            weights: N,C,H,W
+        """
         images = images.to(self.device)
         targets = targets.to(self.device)
+        weights = weights.to(self.device)
         outputs = self.net(images)
         loss = self.criterion(outputs, targets)
+        if self.weight:
+            loss = loss * weights
+            loss = loss.mean()
         return loss, outputs
 
     def iterate(self, epoch, phase):
@@ -95,8 +109,8 @@ class Trainer(object):
         # tk0 = tqdm_notebook(dataloader, total=total_batches)
         self.optimizer.zero_grad()
         for itr, batch in enumerate(dataloader): # replace `dataloader` with `tk0` for tqdm
-            _, images, targets = batch
-            loss, outputs = self.forward(images, targets)
+            _, images, targets, weights = batch
+            loss, outputs = self.forward(images, targets, weights)
             loss = loss / self.accumulation_steps
             if phase == "train":
                 loss.backward()

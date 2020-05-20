@@ -1,5 +1,7 @@
 import os
+import sys
 import cv2
+import torch
 import random
 import numpy as np
 import pandas as pd
@@ -49,9 +51,9 @@ def get_transforms(phase):
             [
                 HorizontalFlip(p=0.5),
                 # ShiftScaleRotate(shift_limit=0.0625, scale_limit=0.1, rotate_limit=10, border_mode=cv2.BORDER_CONSTANT, value=0, mask_value=0),
-                # RandomContrast(p=0.5),
+                RandomContrast(p=0.5),
                 RandomBrightness(p=0.5),
-                RandomBrightnessContrast(p=0.5),
+                # RandomBrightnessContrast(p=0.5),
             ]
         )
     list_transforms.extend(
@@ -66,9 +68,11 @@ def get_transforms(phase):
 
 ### Dataloader
 class PPGDataset(Dataset):
-    def __init__(self, pairs, phase):
+    def __init__(self, pairs, phase, classes, weight):
         self.pairs = pairs
         self.phase = phase
+        self.classes = classes
+        self.weight = weight # in the form [a, b, c]
         self.transforms = get_transforms(phase)
 
     def __getitem__(self, idx):
@@ -82,7 +86,20 @@ class PPGDataset(Dataset):
         # print(img.shape, mask.shape)
         if len(mask.shape) == 4: # when mask is non-grayscale
             mask = mask[0].permute(2, 0, 1) # CxHxW
-        return name, img, mask
+        if self.weight and mask.shape[0] == 1:
+            print('Cannot assign weight when raw input mask is grayscale')
+            sys.exit()
+        C, H, W = mask.shape
+        weight = torch.tensor(self.weight)
+        if self.weight:
+            if self.classes == 1:
+                weight = torch.ones_like(mask)
+                for i in range(C):
+                    weight[i, :, :] += (mask[i, :, :] == 1) * (self.weight[i] - 1)
+                weight = weight.max(dim=0).values
+            else: # classes = 3
+                weight = weight.view(C, 1).expand(C, H*W).view(C, H, W)
+        return name, img, mask, weight
 
     def __len__(self):
         return len(self.pairs)
@@ -92,6 +109,8 @@ def generator(
             image_dir,
             label_dir,
             phase,
+            classes,
+            weight,
             batch_size=8,
             num_workers=4,
             ):
@@ -107,7 +126,7 @@ def generator(
         pairs += [(f[:-4], os.path.join(img_dir, f), os.path.join(lbl_dir, f)) for f in keys]
     random.Random(seed).shuffle(pairs) # shuffle with seed, so that yielding same sampling
     print(phase, len(pairs))
-    dataset = PPGDataset(pairs, phase)
+    dataset = PPGDataset(pairs, phase, classes, weight)
     dataloader = DataLoader(
         dataset,
         batch_size=batch_size,
@@ -121,31 +140,24 @@ def generator(
 
 if __name__ == "__main__":
     # test dataloader
-    image_dir = "../datadefects/highquality-299/images"
-    label_dir = "../datadefects/highquality-299/labels"
+    image_dir = "../datadefects/highquality-3cls-224/images5"
+    label_dir = "../datadefects/highquality-3cls-224/labels5"
     phase = "val"
-    mean = (0.0, 0.0, 0.0)
-    std = (1.0, 1.0, 1.0)
-    keys = [f[:-4] for f in os.listdir(image_dir) if f.endswith('.png')]
-    dataset = PPGDataset(keys, image_dir, label_dir, phase)
+    classes = 1
+    weight = [1.0, 2.0, 1.0]
+    if isinstance(image_dir, list):
+        image_dir = image_dir[1:]
+        label_dir = label_dir[1:]
+    else:
+        image_dir = [image_dir]
+        label_dir = [label_dir]
+    pairs = []
+    for img_dir, lbl_dir in zip(image_dir, label_dir):
+        keys = [f for f in os.listdir(img_dir) if f.endswith('.png')]
+        pairs += [(f[:-4], os.path.join(img_dir, f), os.path.join(lbl_dir, f)) for f in keys]
+    dataset = PPGDataset(pairs, phase, classes, weight)
 
-    # # output mask as img for checking
-    # tmp_dir = './tmp'
-    # os.makedirs(tmp_dir, exist_ok=True)
-    # print('# files', len(dataset))
-    # for i in range(len(dataset)):
-    #     name, img, mask = dataset[i]
-    #     print(name, img.shape, mask.shape)
-        
-    #     img = img.numpy().transpose((1, 2, 0))
-    #     mask = mask.numpy().transpose((1, 2, 0))
-    #     img *= 255
-    #     mask *= 255
-    #     cv2.imwrite(os.path.join(tmp_dir, name+'.jpg'), img)
-    #     cv2.imwrite(os.path.join(tmp_dir, name+'_mask.jpg'), mask)
-    #     break
-
-    # # calculate mean and std of dataset
-    # mean, std = calc_mean_std(dataset)
-    # print('mean: ', mean)
-    # print('std: ', std)
+    for i in range(len(dataset)):
+        name, img, mask, weight = dataset[i]
+        print(img.shape, mask.shape, weight.shape)
+        break

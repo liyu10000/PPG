@@ -11,16 +11,17 @@ class Config:
         ### Common configuration.
         self._parser.add_argument('--seed', type=int, default=42, help='set the random seed for random, np, and torch')
         self._parser.add_argument('--gpu', type=int, default=0, help='choose id of gpu to use')
-        self._parser.add_argument('--image_dir', action='append', default=['path/to/images'])
-        self._parser.add_argument('--label_dir', action='append', default=['path/to/labels'])
         self._parser.add_argument('--classes', type=int, default=3, choices=[3, 1], help='number of classes')
         self._parser.add_argument('--model_path', type=str, default='./model.pth')
         self._parser.add_argument('--num_workers', type=int, default=4)
         
         ### Training configuration.
         self._parser.add_argument('--loss', type=str, default='bce', choices=['bce', 'bce_dice', 'dice'])
-        self._parser.add_argument('--train_batch_size', type=int, default=16, help='batch size for training')
-        self._parser.add_argument('--val_batch_size', type=int, default=16, help='batch size for validation')
+        self._parser.add_argument('--weight', type=str, default='', help='weight on 3 classes')
+        self._parser.add_argument('--image_dir', action='append', default=['path/to/images'])
+        self._parser.add_argument('--label_dir', action='append', default=['path/to/labels'])
+        self._parser.add_argument('--train_batch_size', type=int, default=32, help='batch size for training')
+        self._parser.add_argument('--val_batch_size', type=int, default=32, help='batch size for validation')
         self._parser.add_argument('--accumulation_steps', type=int, default=32, help='number of steps to update params')
         self._parser.add_argument('--lr', type=float, default=0.0001)
         self._parser.add_argument('--num_epochs', type=int, default=30)
