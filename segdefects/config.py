@@ -10,6 +10,7 @@ class Config:
     def initialize(self):
         ### Common configuration.
         self._parser.add_argument('--seed', type=int, default=42, help='set the random seed for random, np, and torch')
+        self._parser.add_argument('--gpu', type=int, default=0, help='choose id of gpu to use')
         self._parser.add_argument('--image_dir', action='append', default=['path/to/images'])
         self._parser.add_argument('--label_dir', action='append', default=['path/to/labels'])
         self._parser.add_argument('--classes', type=int, default=3, choices=[3, 1], help='number of classes')

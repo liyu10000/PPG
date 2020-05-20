@@ -57,3 +57,13 @@
 
  - Result
 1. There is obvious improvement on low-quality data, whereas less improvement on high-quality data.
+
+### Exp5 (05/10/2020)
+ - Idea
+1. Train on high-q and low-q data together at training, except 5 high-q images as test set.
+
+ - Config
+1. Run 30 epochs.
+2. BCE-DICE loss.
+
+ - Result

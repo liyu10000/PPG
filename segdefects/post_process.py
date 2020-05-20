@@ -72,7 +72,7 @@ def evaluate(true_dir, pred_dir, same_channel=False):
 
 
 if __name__ == '__main__':
-    true_dir = '../datadefects/lowquality/labels'
-    pred_dir = '../datadefects/exps/exp4/bce_dice_lowq_joint'
+    true_dir = '../datadefects/highquality/labels'
+    pred_dir = '../datadefects/exps/exp5/bce_dice_5highq_joint'
     same_channel = False
     evaluate(true_dir, pred_dir, same_channel)
