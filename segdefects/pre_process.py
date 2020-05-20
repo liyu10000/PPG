@@ -187,14 +187,14 @@ if __name__ == '__main__':
     # patch_size = 224
     # step_size = patch_size // 2
     # data_dir = '../datadefects/lowquality'
-    # save_dir = '../datadefects/lowquality-224'
-    # binary = True
+    # save_dir = '../datadefects/lowquality-3cls-224'
+    # binary = False
     # whole_mask_dir = '../datadefects/labels_whole'
     # slice(data_dir, save_dir, step_size, patch_size, binary, whole_mask_dir)
 
     # joint patches back to big images
-    patch_dir = '../datadefects/exps/exp5/bce_dice_5highq'
-    save_dir = '../datadefects/exps/exp5/bce_dice_5highq_joint'
+    patch_dir = '../datadefects/exps/exp6/bce_dice_5highq'
+    save_dir = '../datadefects/exps/exp6/bce_dice_5highq_joint'
     joint(patch_dir, save_dir)
 
     # # joint patches back to big images

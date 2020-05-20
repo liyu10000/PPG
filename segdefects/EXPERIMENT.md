@@ -58,7 +58,8 @@
  - Result
 1. There is obvious improvement on low-quality data, whereas less improvement on high-quality data.
 
-### Exp5 (05/10/2020)
+
+### Exp5 (05/18/2020)
  - Idea
 1. Train on high-q and low-q data together at training, except 5 high-q images as test set.
 
@@ -67,3 +68,16 @@
 2. BCE-DICE loss.
 
  - Result
+1. Slight improvement on recall of delamination.
+
+
+### Exp6 (05/19/2020)
+ - Idea
+1. *3-class* segmentation.
+2. Crop patches based on vessel shape.
+3. Train on high-q and low-q data together at training, except 5 high-q images as test set.
+
+ - Config
+1. Run 30 epochs.
+2. BCE-DICE loss.
+
