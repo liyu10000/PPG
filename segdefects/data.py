@@ -80,13 +80,7 @@ class PPGDataset(Dataset):
         name = pair[0]
         img = cv2.imread(pair[1])
         mask = cv2.imread(pair[2], cv2.IMREAD_UNCHANGED)
-        if self.classes == 1 and len(mask.shape) == 3:
-            gray = cv2.cvtColor(mask, cv2.COLOR_BGR2GRAY) # HxW
-            gray = np.expand_dims(gray, axis=0) # 1xHxW
-            augmented = self.transforms(image=img, mask=mask, gray=gray)
-            gray = augmented['gray'] # 1xHxW
-        else:
-            augmented = self.transforms(image=img, mask=mask)
+        augmented = self.transforms(image=img, mask=mask)
         img = augmented['image'] # CxHxW
         mask = augmented['mask'] # 1xHxWxC or 1xHxW
         # print(img.shape, mask.shape)
@@ -105,10 +99,9 @@ class PPGDataset(Dataset):
                 weight = weight.max(dim=0, keepdim=True).values
             else: # classes = 3
                 weight = weight.view(C, 1).expand(C, H*W).view(C, H, W)
-        if self.classes == 1:
-            return name, img, gray, weight
-        else:
-            return name, img, mask, weight
+        if self.classes == 1 and C == 3: # convert mask to grayscale
+            mask = (mask.sum(dim=0, keepdim=True) > 0).type_as(mask)
+        return name, img, mask, weight
 
     def __len__(self):
         return len(self.pairs)

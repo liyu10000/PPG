@@ -91,8 +91,6 @@ class Trainer(object):
         targets = targets.to(self.device)
         weights = weights.to(self.device)
         outputs = self.net(images)
-        targets = targets.type_as(outputs)
-        # print(outputs.dtype, targets.dtype, weights.dtype)
         if self.weight:
             loss = self.criterion(outputs, targets, reduction='none')
             loss = loss * weights

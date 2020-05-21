@@ -193,8 +193,8 @@ if __name__ == '__main__':
     # slice(data_dir, save_dir, step_size, patch_size, binary, whole_mask_dir)
 
     # joint patches back to big images
-    patch_dir = '../datadefects/exps/exp6/bce_dice_5highq'
-    save_dir = '../datadefects/exps/exp6/bce_dice_5highq_joint'
+    patch_dir = '../datadefects/exps/exp7/bce_dice_5highq'
+    save_dir = '../datadefects/exps/exp7/bce_dice_5highq_joint'
     joint(patch_dir, save_dir)
 
     # # joint patches back to big images

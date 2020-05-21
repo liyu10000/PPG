@@ -93,4 +93,8 @@
 3. Train on high-q and low-q data combined, except 5 high-q images as test set.
 
  - Config
+1. weight set at [1.0,2.0,1.0].
+2. Run 30 epochs.
+3. BCE-DICE loss.
 
+ - Result
