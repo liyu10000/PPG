@@ -31,7 +31,7 @@ class Tester(object):
         self.pred_mask_dir = cfg.pred_mask_dir
         os.makedirs(self.pred_mask_dir, exist_ok=True)
         self.device = torch.device('cuda:{}'.format(cfg.gpu))
-        torch.set_default_tensor_type("torch.cuda.FloatTensor")
+        # torch.set_default_tensor_type("torch.cuda.FloatTensor")
         torch.backends.cudnn.benchmark = True
         self.classes = cfg.classes
         # load weights

@@ -49,7 +49,7 @@ class Trainer(object):
         self.best_loss = float("inf")
         self.phases = ["train", "val"]
         self.device = torch.device('cuda:{}'.format(cfg.gpu))
-        torch.set_default_tensor_type("torch.cuda.FloatTensor")
+        # torch.set_default_tensor_type("torch.cuda.FloatTensor")
         self.net = model
         if self.resume:
             checkpoint = torch.load(cfg.model_path)
@@ -58,7 +58,7 @@ class Trainer(object):
             self.net.load_state_dict(checkpoint["state_dict"])
             print('loaded {}, current loss: {}'.format(cfg.model_path, self.best_loss))
         self.net = self.net.to(self.device)
-        self.weight = cfg.weight.split(',') if cfg.weight != '' else []
+        self.weight = [float(w) for w in cfg.weight.split(',')] if cfg.weight != '' else []
         if cfg.loss == 'bce':
             self.criterion = bce_loss
         elif cfg.loss == 'bce_dice':
@@ -91,10 +91,14 @@ class Trainer(object):
         targets = targets.to(self.device)
         weights = weights.to(self.device)
         outputs = self.net(images)
-        loss = self.criterion(outputs, targets)
+        targets = targets.type_as(outputs)
+        # print(outputs.dtype, targets.dtype, weights.dtype)
         if self.weight:
+            loss = self.criterion(outputs, targets, reduction='none')
             loss = loss * weights
             loss = loss.mean()
+        else:
+            loss = self.criterion(outputs, targets)
         return loss, outputs
 
     def iterate(self, epoch, phase):

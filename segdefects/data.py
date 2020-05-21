@@ -80,7 +80,13 @@ class PPGDataset(Dataset):
         name = pair[0]
         img = cv2.imread(pair[1])
         mask = cv2.imread(pair[2], cv2.IMREAD_UNCHANGED)
-        augmented = self.transforms(image=img, mask=mask)
+        if self.classes == 1 and len(mask.shape) == 3:
+            gray = cv2.cvtColor(mask, cv2.COLOR_BGR2GRAY) # HxW
+            gray = np.expand_dims(gray, axis=0) # 1xHxW
+            augmented = self.transforms(image=img, mask=mask, gray=gray)
+            gray = augmented['gray'] # 1xHxW
+        else:
+            augmented = self.transforms(image=img, mask=mask)
         img = augmented['image'] # CxHxW
         mask = augmented['mask'] # 1xHxWxC or 1xHxW
         # print(img.shape, mask.shape)
@@ -95,11 +101,14 @@ class PPGDataset(Dataset):
             if self.classes == 1:
                 weight = torch.ones_like(mask)
                 for i in range(C):
-                    weight[i, :, :] += (mask[i, :, :] == 1) * (self.weight[i] - 1)
-                weight = weight.max(dim=0).values
+                    weight[i, :, :] += mask[i, :, :]* (self.weight[i] - 1)
+                weight = weight.max(dim=0, keepdim=True).values
             else: # classes = 3
                 weight = weight.view(C, 1).expand(C, H*W).view(C, H, W)
-        return name, img, mask, weight
+        if self.classes == 1:
+            return name, img, gray, weight
+        else:
+            return name, img, mask, weight
 
     def __len__(self):
         return len(self.pairs)
@@ -144,7 +153,7 @@ if __name__ == "__main__":
     label_dir = "../datadefects/highquality-3cls-224/labels5"
     phase = "val"
     classes = 1
-    weight = [1.0, 2.0, 1.0]
+    weight = [1.0, 2.0, 3.0]
     if isinstance(image_dir, list):
         image_dir = image_dir[1:]
         label_dir = label_dir[1:]
@@ -158,6 +167,9 @@ if __name__ == "__main__":
     dataset = PPGDataset(pairs, phase, classes, weight)
 
     for i in range(len(dataset)):
+        print(i)
         name, img, mask, weight = dataset[i]
         print(img.shape, mask.shape, weight.shape)
+        print(mask.max(), mask.min())
+        print(weight.max(), weight.min())
         break
