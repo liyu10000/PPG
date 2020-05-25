@@ -115,6 +115,7 @@
  - Result
 1. For weight 111, 90p is only slightly better than 30p, whereas 60p is worse than 30p. It suggests no need to run 90p.
 2. Model trained with train/val split data performs comparably to model trained and validated on same data.
+3. Weight 142 at 30p yields better results than weight 111.
 
 
 ### Exp9 (05/24/2020)
@@ -126,6 +127,9 @@
 
  - Config
 1. Run 30/60/90 epochs.
-2. Weight set at [1.0,1.0,1.0].
+2. Weight set at [1.0,1.0,1.0], [0.9,1.0,1.0], [1.0,1.1,1.1].
 
  - Result
+1. Data augmentation leads to significant improvement.
+2. For weight 111, 90p model is slightly better than 30p.
+
