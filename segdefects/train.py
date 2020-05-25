@@ -59,6 +59,11 @@ class Trainer(object):
             print('loaded {}, current loss: {}'.format(cfg.model_path, self.best_loss))
         self.net = self.net.to(self.device)
         self.weight = [float(w) for w in cfg.weight.split(',')] if cfg.weight != '' else []
+        if cfg.train_val_split:
+            num, idx = cfg.train_val_split.split(',')
+            self.train_val_split = [int(num), int(idx)]
+        else:
+            self.train_val_split = []
         if cfg.loss == 'bce':
             self.criterion = bce_loss
         elif cfg.loss == 'bce_dice':
@@ -74,6 +79,7 @@ class Trainer(object):
                 phase=phase,
                 classes=self.classes,
                 weight=self.weight,
+                train_val_split=self.train_val_split,
                 batch_size=self.batch_size[phase],
                 num_workers=self.num_workers,
             )

@@ -113,6 +113,7 @@ def generator(
             phase,
             classes,
             weight,
+            train_val_split=[], # should be [partition numbers, partition index]
             batch_size=8,
             num_workers=4,
             ):
@@ -127,6 +128,13 @@ def generator(
         keys = [f for f in os.listdir(img_dir) if f.endswith('.png')]
         pairs += [(f[:-4], os.path.join(img_dir, f), os.path.join(lbl_dir, f)) for f in keys]
     random.Random(seed).shuffle(pairs) # shuffle with seed, so that yielding same sampling
+    if train_val_split:
+        num, idx = train_val_split
+        part_cnt = len(pairs) // num
+        if phase == 'train':
+            pairs = pairs[:part_cnt*idx] + pairs[part_cnt*(idx+1):]
+        elif phase == 'val':
+            pairs = pairs[part_cnt*idx : part_cnt*(idx+1)]
     print(phase, len(pairs))
     dataset = PPGDataset(pairs, phase, classes, weight)
     dataloader = DataLoader(

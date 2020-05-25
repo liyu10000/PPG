@@ -93,8 +93,39 @@
 3. Train on high-q and low-q data combined, except 5 high-q images as test set.
 
  - Config
-1. weight set at [1.0,2.0,1.0].
+1. weight set at [1.0,2.0,1.0], [1.0,4.0,2.0], [2.0,4.0,1.0], [1.0,4.0,1.0].
 2. Run 30 epochs.
 3. BCE-DICE loss.
+
+ - Result
+1. weight 142 looks better.
+
+
+### Exp8 (05/24/2020)
+ - Idea
+1. *1-class* segmentation.
+2. Train on high-q and low-q, but split train/val sets and alternate three splits. Test on 5 high-q images.
+3. Assign weights.
+
+ - Config
+1. Run 30/60/90 epochs.
+2. Weight set at [1.0,1.0,1.0], [1.0,4.0,2.0].
+3. When running weight 142, correct and update labels of 7HR: Use labelme to manually add missing polygon and regenerate masks.
+
+ - Result
+1. For weight 111, 90p is only slightly better than 30p, whereas 60p is worse than 30p. It suggests no need to run 90p.
+2. Model trained with train/val split data performs comparably to model trained and validated on same data.
+
+
+### Exp9 (05/24/2020)
+ - Idea
+1. One-fold data augmentation on delamination.
+2. *1-class* segmentation.
+3. Train on high-q and low-q, but split train/val sets and alternate three splits. Test on 5 high-q images.
+4. Assign weights.
+
+ - Config
+1. Run 30/60/90 epochs.
+2. Weight set at [1.0,1.0,1.0].
 
  - Result

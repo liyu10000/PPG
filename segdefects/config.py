@@ -20,6 +20,7 @@ class Config:
         self._parser.add_argument('--weight', type=str, default='', help='weight on 3 classes')
         self._parser.add_argument('--image_dir', action='append', default=['path/to/images'])
         self._parser.add_argument('--label_dir', action='append', default=['path/to/labels'])
+        self._parser.add_argument('--train_val_split', type=str, default='', help='[num of partitions, idx of partition for val]')
         self._parser.add_argument('--train_batch_size', type=int, default=32, help='batch size for training')
         self._parser.add_argument('--val_batch_size', type=int, default=32, help='batch size for validation')
         self._parser.add_argument('--accumulation_steps', type=int, default=32, help='number of steps to update params')

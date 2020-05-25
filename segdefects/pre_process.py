@@ -127,9 +127,28 @@ def slice(data_dir, save_dir, step_size, patch_size, binary=True, whole_mask_dir
                     w = W - patch_size
                 img_patch = img[h:h+patch_size, w:w+patch_size]
                 mask_patch = mask[h:h+patch_size, w:w+patch_size]
+
+                # # data augmentation on delamination
+                # if np.any(mask_patch[:, :, 1] > 0):
+                #     # randomly shift cut positions
+                #     h += random.randint(-step_size, step_size)
+                #     w += random.randint(-step_size, step_size)
+                #     # ensure patch is available
+                #     h = max(0, min(H - patch_size, h))
+                #     w = max(0, min(W - patch_size, w))
+                #     # recut patch
+                #     img_patch = img[h:h+patch_size, w:w+patch_size]
+                #     mask_patch = mask[h:h+patch_size, w:w+patch_size]
+                #     # if new patch does not include delamination, skip
+                #     if np.all(mask_patch[:, :, 1] == 0):
+                #         continue
+                # else:
+                #     continue
+
+                # check if patch is within whole vessel mask
                 if whole_mask_dir is not None:
                     whole_patch = whole[h:h+patch_size, w:w+patch_size]
-                    if np.sum(whole_patch) == 0: # ignore blank patches
+                    if np.sum(whole_patch) == 0: # ignore background patches
                         continue
                 image_path2 = os.path.join(image_dir2, '{}_H{}_W{}_h{}_w{}.png'.format(basename, H, W, h, w))
                 label_path2 = os.path.join(label_dir2, '{}_H{}_W{}_h{}_w{}.png'.format(basename, H, W, h, w))
@@ -187,14 +206,14 @@ if __name__ == '__main__':
     # patch_size = 224
     # step_size = patch_size // 2
     # data_dir = '../datadefects/lowquality'
-    # save_dir = '../datadefects/lowquality-3cls-224'
+    # save_dir = '../datadefects/lowquality-3cls-224-aug'
     # binary = False
     # whole_mask_dir = '../datadefects/labels_whole'
     # slice(data_dir, save_dir, step_size, patch_size, binary, whole_mask_dir)
 
     # joint patches back to big images
-    patch_dir = '../datadefects/exps/exp7/bce_dice_5highq'
-    save_dir = '../datadefects/exps/exp7/bce_dice_5highq_joint'
+    patch_dir = '../datadefects/exps/exp8/bce_dice142_5highq'
+    save_dir = '../datadefects/exps/exp8/bce_dice142_5highq_joint'
     joint(patch_dir, save_dir)
 
     # # joint patches back to big images
