@@ -40,7 +40,7 @@ class Tester(object):
         if not os.path.isfile(best_model):
             print('*****WARNING*****: {} does not exist.'.format(best_model))
             sys.exit()
-        checkpoint = torch.load(best_model)
+        checkpoint = torch.load(best_model, map_location='cuda:{}'.format(cfg.gpu))
         self.epoch = checkpoint["epoch"]
         self.best_loss = checkpoint["loss"]
         self.net.load_state_dict(checkpoint["state_dict"])
@@ -51,8 +51,6 @@ class Tester(object):
                                     image_dir=self.image_dir,
                                     label_dir=self.label_dir,
                                     phase="test",
-                                    classes=self.classes,
-                                    weight=[],
                                     batch_size=self.batch_size,
                                     num_workers=self.num_workers,
                                     )
@@ -79,7 +77,7 @@ class Tester(object):
     def start(self):
         with torch.no_grad():
             for batch in tqdm(self.dataloader):
-                names, images, _, _ = batch
+                names, images, _ = batch
                 probs = self.forward(images)
                 self.save(names, probs)
 

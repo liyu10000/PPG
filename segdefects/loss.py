@@ -65,11 +65,11 @@ def dice_loss(inputs, targets):
 
     return 1. - s / (i + 1)
 
-def bce_loss(inputs, targets, reduction='mean'):
-    return nn.BCEWithLogitsLoss(reduction=reduction)(inputs, targets)
+def bce_loss(inputs, targets):
+    return nn.BCEWithLogitsLoss()(inputs, targets)
 
-def bce_dice_loss(inputs, targets, reduction='mean'):
-    return bce_loss(inputs, targets, reduction) + dice_loss(inputs, targets)
+def bce_dice_loss(inputs, targets):
+    return bce_loss(inputs, targets) + dice_loss(inputs, targets)
 
 
 def parse_train_log(train_log):

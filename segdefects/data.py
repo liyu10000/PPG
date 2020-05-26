@@ -68,40 +68,33 @@ def get_transforms(phase):
 
 ### Dataloader
 class PPGDataset(Dataset):
-    def __init__(self, pairs, phase, classes, weight):
+    def __init__(self, pairs, phase):
         self.pairs = pairs
         self.phase = phase
-        self.classes = classes
-        self.weight = weight # in the form [a, b, c]
         self.transforms = get_transforms(phase)
 
     def __getitem__(self, idx):
         pair = self.pairs[idx]
         name = pair[0]
         img = cv2.imread(pair[1])
-        mask = cv2.imread(pair[2], cv2.IMREAD_UNCHANGED)
+        mask = cv2.imread(pair[2], cv2.IMREAD_UNCHANGED) # RGB here
+        
+        # update mask
+        if os.path.isfile(pair[3]):
+            H, W, C = mask.shape
+            pred_mask = cv2.imread(pair[3], cv2.IMREAD_UNCHANGED) # gray-scale here
+            if np.sum(mask[:, :, 0]) / 255 > H * W / 2: # if its block fouling
+                mask[:, :, 0] = pred_mask
+
         augmented = self.transforms(image=img, mask=mask)
         img = augmented['image'] # CxHxW
         mask = augmented['mask'] # 1xHxWxC or 1xHxW
         # print(img.shape, mask.shape)
         if len(mask.shape) == 4: # when mask is non-grayscale
             mask = mask[0].permute(2, 0, 1) # CxHxW
-        if self.weight and mask.shape[0] == 1:
-            print('Cannot assign weight when raw input mask is grayscale')
-            sys.exit()
-        C, H, W = mask.shape
-        weight = torch.tensor(self.weight)
-        if self.weight:
-            if self.classes == 1:
-                weight = torch.ones_like(mask)
-                for i in range(C):
-                    weight[i, :, :] += mask[i, :, :]* (self.weight[i] - 1)
-                weight = weight.max(dim=0, keepdim=True).values
-            else: # classes = 3
-                weight = weight.view(C, 1).expand(C, H*W).view(C, H, W)
-        if self.classes == 1 and C == 3: # convert mask to grayscale
-            mask = (mask.sum(dim=0, keepdim=True) > 0).type_as(mask)
-        return name, img, mask, weight
+        # convert to 1 channel mask
+        mask = (mask.sum(dim=0, keepdim=True) > 0).type_as(mask)
+        return name, img, mask
 
     def __len__(self):
         return len(self.pairs)
@@ -111,8 +104,7 @@ def generator(
             image_dir,
             label_dir,
             phase,
-            classes,
-            weight,
+            semi_dir='', # directory to store prediced masks
             train_val_split=[], # should be [partition numbers, partition index]
             batch_size=8,
             num_workers=4,
@@ -126,7 +118,7 @@ def generator(
     pairs = []
     for img_dir, lbl_dir in zip(image_dir, label_dir):
         keys = [f for f in os.listdir(img_dir) if f.endswith('.png')]
-        pairs += [(f[:-4], os.path.join(img_dir, f), os.path.join(lbl_dir, f)) for f in keys]
+        pairs += [(f[:-4], os.path.join(img_dir, f), os.path.join(lbl_dir, f), os.path.join(semi_dir, f)) for f in keys]
     random.Random(seed).shuffle(pairs) # shuffle with seed, so that yielding same sampling
     if train_val_split:
         num, idx = train_val_split
@@ -136,7 +128,7 @@ def generator(
         elif phase == 'val':
             pairs = pairs[part_cnt*idx : part_cnt*(idx+1)]
     print(phase, len(pairs))
-    dataset = PPGDataset(pairs, phase, classes, weight)
+    dataset = PPGDataset(pairs, phase)
     dataloader = DataLoader(
         dataset,
         batch_size=batch_size,

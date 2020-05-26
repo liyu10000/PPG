@@ -1,4 +1,5 @@
 import os
+import cv2
 import time
 import random
 import warnings
@@ -6,9 +7,10 @@ import numpy as np
 import pandas as pd
 import segmentation_models_pytorch as smp
 from matplotlib import pyplot as plt
-from tqdm import tqdm_notebook
+from tqdm import tqdm, tqdm_notebook
 import torch
 import torch.optim as optim
+import torch.nn.functional as F
 from torch.optim.lr_scheduler import ReduceLROnPlateau
 
 from config import Config
@@ -35,6 +37,7 @@ class Trainer(object):
         self.classes = cfg.classes
         self.image_dir = cfg.image_dir
         self.label_dir = cfg.label_dir
+        self.semi_dir = cfg.semi_dir
         self.num_workers = cfg.num_workers
         self.batch_size = {"train": cfg.train_batch_size, "val": cfg.val_batch_size}
         self.accumulation_steps =  cfg.accumulation_steps // self.batch_size['train']
@@ -54,11 +57,10 @@ class Trainer(object):
         if self.resume:
             checkpoint = torch.load(cfg.model_path)
             # self.epoch = checkpoint["epoch"] + 1  # it may not be the last epoch being runned
-            self.best_loss = checkpoint["loss"]
+            # self.best_loss = checkpoint["loss"]
             self.net.load_state_dict(checkpoint["state_dict"])
             print('loaded {}, current loss: {}'.format(cfg.model_path, self.best_loss))
         self.net = self.net.to(self.device)
-        self.weight = [float(w) for w in cfg.weight.split(',')] if cfg.weight != '' else []
         if cfg.train_val_split:
             num, idx = cfg.train_val_split.split(',')
             self.train_val_split = [int(num), int(idx)]
@@ -72,37 +74,17 @@ class Trainer(object):
             self.criterion = dice_loss
         self.optimizer = optim.Adam(self.net.parameters(), lr=self.lr)
         self.scheduler = ReduceLROnPlateau(self.optimizer, mode="min", patience=3, verbose=True)
-        self.dataloaders = {
-            phase: generator(
-                image_dir=self.image_dir,
-                label_dir=self.label_dir,
-                phase=phase,
-                classes=self.classes,
-                weight=self.weight,
-                train_val_split=self.train_val_split,
-                batch_size=self.batch_size[phase],
-                num_workers=self.num_workers,
-            )
-            for phase in self.phases
-        }
         
-    def forward(self, images, targets, weights):
+    def forward(self, images, targets):
         """
         @params
             images: N,C,H,W
             targets: N,C,H,W
-            weights: N,C,H,W
         """
         images = images.to(self.device)
         targets = targets.to(self.device)
-        weights = weights.to(self.device)
         outputs = self.net(images)
-        if self.weight:
-            loss = self.criterion(outputs, targets, reduction='none')
-            loss = loss * weights
-            loss = loss.mean()
-        else:
-            loss = self.criterion(outputs, targets)
+        loss = self.criterion(outputs, targets)
         return loss, outputs
 
     def iterate(self, epoch, phase):
@@ -117,8 +99,8 @@ class Trainer(object):
         # tk0 = tqdm_notebook(dataloader, total=total_batches)
         self.optimizer.zero_grad()
         for itr, batch in enumerate(dataloader): # replace `dataloader` with `tk0` for tqdm
-            _, images, targets, weights = batch
-            loss, outputs = self.forward(images, targets, weights)
+            _, images, targets = batch
+            loss, outputs = self.forward(images, targets)
             loss = loss / self.accumulation_steps
             if phase == "train":
                 loss.backward()
@@ -134,8 +116,50 @@ class Trainer(object):
         torch.cuda.empty_cache()
         return epoch_loss
 
+    def update_dataloader(self):
+        self.dataloaders = {
+            phase: generator(
+                image_dir=self.image_dir,
+                label_dir=self.label_dir,
+                phase=phase,
+                semi_dir=self.semi_dir+str(self.epoch),
+                train_val_split=self.train_val_split,
+                batch_size=self.batch_size[phase],
+                num_workers=self.num_workers,
+            )
+            for phase in self.phases
+        }
+
+    def pred_forward(self, images):
+        images = images.to(self.device)
+        outputs = self.net(images)
+        if self.classes > 1:
+            probs = F.softmax(outputs, dim=1)
+        else:
+            probs = torch.sigmoid(outputs)
+        probs = probs.cpu().numpy()
+        return probs
+
+    def predict(self):
+        pred_mask_dir = self.semi_dir + str(self.epoch)
+        os.makedirs(pred_mask_dir, exist_ok=True)
+        with torch.no_grad():
+            for phase in ["train", "val"]:
+                dataloader = self.dataloaders[phase]
+                for batch in dataloader:
+                    names, images, _ = batch
+                    probs = self.pred_forward(images)
+                    for name, prob in zip(names, probs):
+                        pred_mask = prob > 0.5  # convert to binary mask
+                        pred_mask = pred_mask.astype(np.uint8)
+                        pred_mask = pred_mask * 255
+                        pred_mask = pred_mask.transpose((1, 2, 0))
+                        cv2.imwrite(os.path.join(pred_mask_dir, name+'.png'), pred_mask)
+
     def start(self):
         while self.epoch < self.num_epochs:
+            self.update_dataloader()
+
             self.iterate(self.epoch, "train")
             with torch.no_grad():
                 val_loss = self.iterate(self.epoch, "val")
@@ -153,6 +177,10 @@ class Trainer(object):
                 self.best_loss = val_loss
                 torch.save(state, self.best_model)
             self.epoch += 1
+
+            # generate labels
+            self.predict()
+            
             print()
 
 

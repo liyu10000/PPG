@@ -133,3 +133,10 @@
 1. Data augmentation leads to significant improvement.
 2. For weight 111, 90p model is slightly better than 30p.
 
+
+### Exp10 (05/25/2020)
+ - Idea
+1. Semi-supervised image segmentation. Adaptive ground truth iteration during training. For this experiment, only adaptively update labels of fouling, cause it is the most coarse grained.
+2. Only update block fouling labels. 
+3. *1-class* segmentation.
+4. Start with a model pretrained on high-q data (bce_dice_high5.pth from *Exp3*, rename it to iter0.pth).
