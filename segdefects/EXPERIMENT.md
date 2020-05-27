@@ -133,3 +133,29 @@
 1. Data augmentation leads to significant improvement.
 2. For weight 111, 90p model is slightly better than 30p.
 
+
+### Exp10 (05/25/2020)
+ - Idea
+1. Semi-supervised training, on augmented data from *Exp9*.
+2. *1-class* segmentation.
+3. Iteratively update block fouling and update data loader.
+
+ - Config
+1. Run 30 epochs.
+2. Determine there is block fouling in patches by checking if area of ground truth fouling is over 50%.
+
+ - Result
+1. Results are not as good as *Exp9*.
+
+
+### Exp11 (05/25/2020)
+ - Idea
+1. Train on low-q data and finetune high-q data. With data augmentation.
+2. *1-class* segmentation.
+
+ - Config
+1. Run 30 epochs on low-q data, then 30 epochs on high-q data
+2. Lr at low-q is 0.0001, lr at high-q is 0.00001.
+
+ - Result
+1. Results are only comparable to those without data augmentation.

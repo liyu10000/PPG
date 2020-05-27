@@ -14,12 +14,14 @@ def parse_dir(data_dir):
         path = os.path.join(data_dir, f)
         file_dict[f]['path'] = path
         file_dict[f]['img'] = f + '.png'
+        for defect in defects:
+            file_dict[f][defect] = []
         csvs = [c for c in os.listdir(path) if c.endswith('.csv')]
         csvs.sort()
-        for defect in defects:
-            prefix = f + '_' + defect
-            defect_csvs = [c for c in csvs if c.startswith(prefix)]
-            file_dict[f][defect] = defect_csvs
+        for csv in csvs:
+            for defect in defects:
+                if defect in csv:
+                    file_dict[f][defect].append(csv)
     return file_dict
 
 def read_labels(csvs):
@@ -100,10 +102,10 @@ def slice(data_dir, save_dir, step_size, patch_size, binary=True, whole_mask_dir
         binary: whether or not to save masks as binary or RGB
         whole_mask_dir: directory with whole vessel segmentation masks
     """
-    image_dir = os.path.join(data_dir, 'images')
-    label_dir = os.path.join(data_dir, 'labels')
-    image_dir2 = os.path.join(save_dir, 'images')
-    label_dir2 = os.path.join(save_dir, 'labels')
+    image_dir = os.path.join(data_dir, 'images2')
+    label_dir = os.path.join(data_dir, 'labels2')
+    image_dir2 = os.path.join(save_dir, 'images2')
+    label_dir2 = os.path.join(save_dir, 'labels2')
     os.makedirs(image_dir2, exist_ok=True)
     os.makedirs(label_dir2, exist_ok=True)
     files = os.listdir(image_dir)
@@ -195,26 +197,26 @@ def joint(patch_dir, save_dir):
 
 if __name__ == '__main__':
     # # read csv files and generate masks
-    # data_dir = '../datadefects/raw/lowquality'
+    # data_dir = '../datadefects/raw/lowquality2'
     # file_dict = parse_dir(data_dir)
-    # save_dir = '../datadefects/lowquality/labels'
+    # save_dir = '../datadefects/lowquality/labels2'
     # for f in file_dict:
     #     print('Processing', f)
     #     show_labels(f, file_dict, save_dir)
 
-    # # slice images/labels into small patches
-    # patch_size = 224
-    # step_size = patch_size // 2
-    # data_dir = '../datadefects/lowquality'
-    # save_dir = '../datadefects/lowquality-3cls-224-aug'
-    # binary = False
-    # whole_mask_dir = '../datadefects/labels_whole'
-    # slice(data_dir, save_dir, step_size, patch_size, binary, whole_mask_dir)
+    # slice images/labels into small patches
+    patch_size = 224
+    step_size = patch_size // 2
+    data_dir = '../datadefects/lowquality'
+    save_dir = '../datadefects/lowquality-3cls-224'
+    binary = False
+    whole_mask_dir = '../datadefects/labels_whole/set2'
+    slice(data_dir, save_dir, step_size, patch_size, binary, whole_mask_dir)
 
-    # joint patches back to big images
-    patch_dir = '../datadefects/exps/exp9/bce_dice.911_5highq'
-    save_dir = '../datadefects/exps/exp9/bce_dice.911_5highq_joint'
-    joint(patch_dir, save_dir)
+    # # joint patches back to big images
+    # patch_dir = '../datadefects/exps/exp9/bce_dice.911_5highq'
+    # save_dir = '../datadefects/exps/exp9/bce_dice.911_5highq_joint'
+    # joint(patch_dir, save_dir)
 
     # # joint patches back to big images
     # patch_dir = '../datadefects/exps/exp4/bce_dice_lowq'
