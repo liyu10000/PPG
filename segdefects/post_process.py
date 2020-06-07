@@ -1,7 +1,43 @@
 import os
 import cv2
+import argparse
 import numpy as np
 
+
+def joint(patch_dir, save_dir):
+    """ Joint mask patches into big masks
+    Assume step_size = patch_size
+    @params
+        patch_dir: directory with patches of predicted masks
+        save_dir: directory to save big masks
+    """
+    # collect mask names associated with one image
+    file_dict = {}
+    files = os.listdir(patch_dir)
+    for f in files:
+        tokens = f[:-4].rsplit('_', 4)
+        basename = tokens[0]
+        H = int(tokens[1][1:])
+        W = int(tokens[2][1:])
+        h = int(tokens[3][1:])
+        w = int(tokens[4][1:])
+        if basename not in file_dict:
+            file_dict[basename] = {'H':H, 'W':W, 'patches':[]}
+        file_dict[basename]['patches'].append([h, w, f])
+    # put patches back into a big image
+    os.makedirs(save_dir, exist_ok=True)
+    for basename in file_dict:
+        save_name = os.path.join(save_dir, basename+'.png')
+        H, W = file_dict[basename]['H'], file_dict[basename]['W']
+        mask = np.zeros((H, W, 3))
+        patches = file_dict[basename]['patches']
+        for h, w, f in patches:
+            patch_name = os.path.join(patch_dir, f)
+            patch = cv2.imread(patch_name)
+            ph, pw, _ = patch.shape
+            mask[h:h+ph, w:w+pw] = patch
+        cv2.imwrite(save_name, mask)
+        print('Finished jointing', basename)
 
 def _evaluate(true_mask, pred_mask, same_channel):
     """ Calculate the overall precision, recall, per channel recall,
@@ -18,7 +54,10 @@ def _evaluate(true_mask, pred_mask, same_channel):
     pred_mask_b = np.sum(pred_mask, axis=2)
     intersect_b = np.sum(intersect, axis=2)
     precision = np.count_nonzero(intersect_b) / np.count_nonzero(pred_mask_b)
-    recall = np.count_nonzero(intersect_b) / np.count_nonzero(true_mask_b)
+    try:
+        recall = np.count_nonzero(intersect_b) / np.count_nonzero(true_mask_b)
+    except:
+        recall = 0.0
     # calculate per channel recall
     ch_recalls = []
     for i in range(3):
@@ -72,7 +111,33 @@ def evaluate(true_dir, pred_dir, same_channel=False):
 
 
 if __name__ == '__main__':
-    true_dir = '../datadefects/highquality/labels'
-    pred_dir = '../datadefects/exps/exp9/bce_dice.911_5highq_joint'
+    # # joint patches back to big images
+    # patch_dir = '../datadefects/exps/exp9/bce_dice.911_5highq'
+    # joint_dir = '../datadefects/exps/exp9/bce_dice.911_5highq_joint'
+    # joint(patch_dir, joint_dir)
+
+    # # calculate precision and recall
+    # true_dir = '../datadefects/highquality/labels'
+    # pred_dir = '../datadefects/exps/exp9/bce_dice.911_5highq_joint'
+    # same_channel = False
+    # evaluate(true_dir, pred_dir, same_channel)
+
+
+    # work by passing arguments
+    parser = argparse.ArgumentParser()
+    parser.add_argument('--patch_dir', type=str, default='path/to/patches/for/joint')
+    parser.add_argument('--joint_dir', type=str, default='path/to/dir/saving/joint/images')
+    parser.add_argument('--true_dir', type=str, default='path/to/true/images')
+    parser.add_argument('--pred_dir', type=str, default='path/to/pred/images')
+    cfg = parser.parse_args()
+
+    # joint patches back to big images
+    patch_dir = cfg.patch_dir
+    joint_dir = cfg.joint_dir
+    joint(patch_dir, joint_dir)
+
+    # calculate precision and recall
+    true_dir = cfg.true_dir
+    pred_dir = cfg.pred_dir
     same_channel = False
     evaluate(true_dir, pred_dir, same_channel)

@@ -150,8 +150,8 @@ def generator(
 
 if __name__ == "__main__":
     # test dataloader
-    image_dir = "../datadefects/highquality-3cls-224/images5"
-    label_dir = "../datadefects/highquality-3cls-224/labels5"
+    image_dir = "../datadefects/highquality-3cls-224/images2-delam"
+    label_dir = "../datadefects/highquality-3cls-224/labels2-delam"
     phase = "val"
     classes = 1
     weight = [1.0, 2.0, 3.0]
@@ -167,10 +167,10 @@ if __name__ == "__main__":
         pairs += [(f[:-4], os.path.join(img_dir, f), os.path.join(lbl_dir, f)) for f in keys]
     dataset = PPGDataset(pairs, phase, classes, weight)
 
-    for i in range(len(dataset)):
-        print(i)
+    for i in tqdm(range(len(dataset)), ncols=100):
+        # print(i)
         name, img, mask, weight = dataset[i]
-        print(img.shape, mask.shape, weight.shape)
-        print(mask.max(), mask.min())
-        print(weight.max(), weight.min())
-        break
+        # print(img.shape, mask.shape, weight.shape)
+        # print(mask.max(), mask.min())
+        # print(weight.max(), weight.min())
+        # break

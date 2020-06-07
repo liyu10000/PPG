@@ -159,3 +159,19 @@
 
  - Result
 1. Results are only comparable to those without data augmentation.
+
+
+### Exp12 (06/06/2020)
+ - Idea
+0. Received new data set.
+1. Augment delamination & corrosion on new high-q set. Augment corrosion on new low-q set.
+2. Found a fatal error in previous exps: delamination augmentation data overlaps with testing set!
+
+ - Config
+1. Manually select 6 samples from new high-q set.
+2. Train on 1st & 2nd data and test on 5in1st & 6in2nd set (expA), name prefix: bce_dice. 
+3. As a comparison, train on 2nd and test on 6in2nd set (expB), name prefix: bce_dice_on2nd.
+
+ - Result
+1. expB is reasonably good, meaning only low-reso data is enough on low-reso images.
+2. For expA and expB, 60p is the best.

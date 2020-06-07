@@ -78,7 +78,7 @@ class Tester(object):
 
     def start(self):
         with torch.no_grad():
-            for batch in tqdm(self.dataloader):
+            for batch in tqdm(self.dataloader, ncols=100):
                 names, images, _, _ = batch
                 probs = self.forward(images)
                 self.save(names, probs)

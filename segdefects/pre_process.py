@@ -104,8 +104,8 @@ def slice(data_dir, save_dir, step_size, patch_size, binary=True, whole_mask_dir
     """
     image_dir = os.path.join(data_dir, 'images2')
     label_dir = os.path.join(data_dir, 'labels2')
-    image_dir2 = os.path.join(save_dir, 'images2')
-    label_dir2 = os.path.join(save_dir, 'labels2')
+    image_dir2 = os.path.join(save_dir, 'images2-delam')
+    label_dir2 = os.path.join(save_dir, 'labels2-delam')
     os.makedirs(image_dir2, exist_ok=True)
     os.makedirs(label_dir2, exist_ok=True)
     files = os.listdir(image_dir)
@@ -130,22 +130,22 @@ def slice(data_dir, save_dir, step_size, patch_size, binary=True, whole_mask_dir
                 img_patch = img[h:h+patch_size, w:w+patch_size]
                 mask_patch = mask[h:h+patch_size, w:w+patch_size]
 
-                # # data augmentation on delamination
-                # if np.any(mask_patch[:, :, 1] > 0):
-                #     # randomly shift cut positions
-                #     h += random.randint(-step_size, step_size)
-                #     w += random.randint(-step_size, step_size)
-                #     # ensure patch is available
-                #     h = max(0, min(H - patch_size, h))
-                #     w = max(0, min(W - patch_size, w))
-                #     # recut patch
-                #     img_patch = img[h:h+patch_size, w:w+patch_size]
-                #     mask_patch = mask[h:h+patch_size, w:w+patch_size]
-                #     # if new patch does not include delamination, skip
-                #     if np.all(mask_patch[:, :, 1] == 0):
-                #         continue
-                # else:
-                #     continue
+                # data augmentation on delamination
+                if np.any(mask_patch[:, :, 1] > 0):
+                    # randomly shift cut positions
+                    h += random.randint(-step_size, step_size)
+                    w += random.randint(-step_size, step_size)
+                    # ensure patch is available
+                    h = max(0, min(H - patch_size, h))
+                    w = max(0, min(W - patch_size, w))
+                    # recut patch
+                    img_patch = img[h:h+patch_size, w:w+patch_size]
+                    mask_patch = mask[h:h+patch_size, w:w+patch_size]
+                    # if new patch does not include delamination, skip
+                    if np.all(mask_patch[:, :, 1] == 0):
+                        continue
+                else:
+                    continue
 
                 # check if patch is within whole vessel mask
                 if whole_mask_dir is not None:
@@ -158,41 +158,6 @@ def slice(data_dir, save_dir, step_size, patch_size, binary=True, whole_mask_dir
                 if binary: # convert to binary mask
                     mask_patch = np.sum(mask_patch, axis=2)
                 cv2.imwrite(label_path2, mask_patch)
-
-def joint(patch_dir, save_dir):
-    """ Joint mask patches into big masks
-    Assume step_size = patch_size
-    @params
-        patch_dir: directory with patches of predicted masks
-        save_dir: directory to save big masks
-    """
-    # collect mask names associated with one image
-    file_dict = {}
-    files = os.listdir(patch_dir)
-    for f in files:
-        tokens = f[:-4].split('_')
-        basename = tokens[0]
-        H = int(tokens[1][1:])
-        W = int(tokens[2][1:])
-        h = int(tokens[3][1:])
-        w = int(tokens[4][1:])
-        if basename not in file_dict:
-            file_dict[basename] = {'H':H, 'W':W, 'patches':[]}
-        file_dict[basename]['patches'].append([h, w, f])
-    # put patches back into a big image
-    os.makedirs(save_dir, exist_ok=True)
-    for basename in file_dict:
-        save_name = os.path.join(save_dir, basename+'.png')
-        H, W = file_dict[basename]['H'], file_dict[basename]['W']
-        mask = np.zeros((H, W, 3))
-        patches = file_dict[basename]['patches']
-        for h, w, f in patches:
-            patch_name = os.path.join(patch_dir, f)
-            patch = cv2.imread(patch_name)
-            ph, pw, _ = patch.shape
-            mask[h:h+ph, w:w+pw] = patch
-        cv2.imwrite(save_name, mask)
-        print('Finished jointing', basename)
 
 
 if __name__ == '__main__':
@@ -207,18 +172,8 @@ if __name__ == '__main__':
     # slice images/labels into small patches
     patch_size = 224
     step_size = patch_size // 2
-    data_dir = '../datadefects/lowquality'
-    save_dir = '../datadefects/lowquality-3cls-224'
+    data_dir = '../datadefects/highquality'
+    save_dir = '../datadefects/highquality-3cls-224'
     binary = False
     whole_mask_dir = '../datadefects/labels_whole/set2'
     slice(data_dir, save_dir, step_size, patch_size, binary, whole_mask_dir)
-
-    # # joint patches back to big images
-    # patch_dir = '../datadefects/exps/exp9/bce_dice.911_5highq'
-    # save_dir = '../datadefects/exps/exp9/bce_dice.911_5highq_joint'
-    # joint(patch_dir, save_dir)
-
-    # # joint patches back to big images
-    # patch_dir = '../datadefects/exps/exp4/bce_dice_lowq'
-    # save_dir = '../datadefects/exps/exp4/bce_dice_lowq_joint'
-    # joint(patch_dir, save_dir)
