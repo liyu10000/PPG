@@ -31,6 +31,7 @@ torch.backends.cudnn.benchmark = True
 class Trainer(object):
     '''This class takes care of training and validation of our model'''
     def __init__(self, model, cfg):
+        self.classes = cfg.classes
         self.image_dir = cfg.image_dir
         self.label_dir = cfg.label_dir
         self.num_workers = cfg.num_workers
@@ -46,23 +47,20 @@ class Trainer(object):
         self.best_model = cfg.model_path
         self.best_loss = float("inf")
         self.phases = ["train", "val"]
-        self.val_interval = []
-        if self.num_epochs == 30:
-            self.val_interval = [0, 70]
-        elif self.num_epochs == 60:
-            self.val_interval = [70, 140]
-        else:
-            self.val_interval = [140, 210]
-        self.device = torch.device('cuda:0')
-        torch.set_default_tensor_type("torch.cuda.FloatTensor")
+        self.device = torch.device('cuda:{}'.format(cfg.gpu))
         self.net = model
         if self.resume:
             checkpoint = torch.load(cfg.model_path)
             # self.epoch = checkpoint["epoch"] + 1  # it may not be the last epoch being runned
-            self.best_loss = checkpoint["best_loss"]
+            self.best_loss = checkpoint["loss"]
             self.net.load_state_dict(checkpoint["state_dict"])
             print('loaded {}, current loss: {}'.format(cfg.model_path, self.best_loss))
         self.net = self.net.to(self.device)
+        if cfg.train_val_split:
+            num, idx = cfg.train_val_split.split(',')
+            self.train_val_split = [int(num), int(idx)]
+        else:
+            self.train_val_split = []
         if cfg.loss == 'bce':
             self.criterion = bce_loss
         elif cfg.loss == 'bce_dice':
@@ -76,7 +74,8 @@ class Trainer(object):
                 image_dir=self.image_dir,
                 label_dir=self.label_dir,
                 phase=phase,
-                val_interval=self.val_interval,
+                classes=self.classes,
+                train_val_split=self.train_val_split,
                 batch_size=self.batch_size[phase],
                 num_workers=self.num_workers,
             )

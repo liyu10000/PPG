@@ -49,8 +49,8 @@ def get_transforms(phase):
             [
                 HorizontalFlip(p=0.5),
                 # ShiftScaleRotate(shift_limit=0.0625, scale_limit=0.1, rotate_limit=10, border_mode=cv2.BORDER_CONSTANT, value=0, mask_value=0),
-                # RandomContrast(p=0.5),
-                # RandomBrightness(p=0.5),
+                RandomContrast(p=0.5),
+                RandomBrightness(p=0.5),
                 # RandomBrightnessContrast(p=0.5),
             ]
         )
@@ -66,50 +66,61 @@ def get_transforms(phase):
 
 ### Dataloader
 class PPGDataset(Dataset):
-    def __init__(self, names, image_dir, label_dir, phase):
-        self.names = names
-        self.image_dir = image_dir
-        self.label_dir = label_dir
+    def __init__(self, pairs, phase, classes):
+        self.pairs = pairs
         self.phase = phase
+        self.classes = classes
         self.transforms = get_transforms(phase)
 
     def __getitem__(self, idx):
-        name = self.names[idx]
-        img = cv2.imread(os.path.join(self.image_dir, name+'.png'))
-        mask = cv2.imread(os.path.join(self.label_dir, name+'.png'), cv2.IMREAD_UNCHANGED)
+        pair = self.pairs[idx]
+        name = pair[0]
+        img = cv2.imread(pair[1])
+        mask = cv2.imread(pair[2], cv2.IMREAD_UNCHANGED)
         augmented = self.transforms(image=img, mask=mask)
         img = augmented['image'] # CxHxW
         mask = augmented['mask'] # 1xHxWxC or 1xHxW
         # print(img.shape, mask.shape)
         if len(mask.shape) == 4: # when mask is non-grayscale
             mask = mask[0].permute(2, 0, 1) # CxHxW
+        C, H, W = mask.shape
+        if self.classes == 1 and C == 3: # convert mask to grayscale
+            mask = (mask.sum(dim=0, keepdim=True) > 0).type_as(mask)
         return name, img, mask
 
     def __len__(self):
-        return len(self.names)
+        return len(self.pairs)
 
 
 def generator(
             image_dir,
             label_dir,
             phase,
-            val_interval,
+            classes,
+            train_val_split=[], # should be [partition numbers, partition index]
             batch_size=8,
             num_workers=4,
             ):
-    keys = [f[:-4] for f in os.listdir(image_dir) if f.endswith('.png')]
-    keys.sort()
-    random.Random(seed).shuffle(keys) # shuffle with seed, so that yielding same sampling
-    val_interval1, val_interval2 = val_interval
-    if phase == "train":
-        sample_keys = keys[:val_interval1] + keys[val_interval2:]
-    elif phase == "val":
-        sample_keys = keys[val_interval1:val_interval2]
+    if isinstance(image_dir, list):
+        image_dir = image_dir[1:]
+        label_dir = label_dir[1:]
     else:
-        sample_keys = keys[val_interval1:val_interval2]
-    # sample_keys = keys  # use all data for train & val
-    print(phase, len(sample_keys))
-    dataset = PPGDataset(sample_keys, image_dir, label_dir, phase)
+        image_dir = [image_dir]
+        label_dir = [label_dir]
+    pairs = []
+    for img_dir, lbl_dir in zip(image_dir, label_dir):
+        keys = [f for f in os.listdir(img_dir) if f.endswith('.png')]
+        pairs += [(f[:-4], os.path.join(img_dir, f), os.path.join(lbl_dir, f)) for f in keys]
+    random.Random(seed).shuffle(pairs) # shuffle with seed, so that yielding same sampling
+    if train_val_split:
+        num, idx = train_val_split
+        part_cnt = len(pairs) // num
+        if phase == 'train':
+            pairs = pairs[:part_cnt*idx] + pairs[part_cnt*(idx+1):]
+        elif phase == 'val':
+            pairs = pairs[part_cnt*idx : part_cnt*(idx+1)]
+    print(phase, len(pairs))
+    dataset = PPGDataset(pairs, phase, classes)
     dataloader = DataLoader(
         dataset,
         batch_size=batch_size,

@@ -90,4 +90,13 @@
 2. One round of train-val is enough. Final # epochs is 30.
 
  - Result
-1. Results are really bad. Something much be wrong.
+1. Results are really bad. Something must be wrong.
+
+
+### Exp7 (06/16/2020)
+ - Idea
+1. Whole ship segmentation.
+2. New data from set2 and set3 of defect segmentation. Combine with data in *Exp5* (add 6 more without clear TS/BT/VS parts).
+3. One-class segmentation.
+4. BCE-DICE loss.
+

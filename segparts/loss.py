@@ -3,8 +3,10 @@ import torch.nn as nn
 import torch.nn.functional as F
 from torch.autograd import Function
 import matplotlib.pyplot as plt
+from config import Config
 
-classes = 3
+cfg = Config().parse()
+classes = cfg.classes
 
 class DiceCoeff(Function):
     """Dice coeff for individual examples"""
