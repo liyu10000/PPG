@@ -51,7 +51,7 @@ def dice_loss(inputs, targets):
     :param targets: N, C, H, W
     """
     if inputs.is_cuda:
-        s = torch.FloatTensor(1).cuda().zero_()
+        s = torch.FloatTensor(1).cuda(cfg.gpu).zero_()
     else:
         s = torch.FloatTensor(1).zero_()
 

@@ -100,3 +100,10 @@
 3. One-class segmentation.
 4. BCE-DICE loss.
 
+ - Config
+1. Total number of images is 362. Set aside 10 from set3 as test set. For old data, only use jpg3040 compressions.
+2. Train 90 epochs, save every 30 epochs.
+
+ - Result
+1. Test result on 'Segmentation_Test_Set' and 'set3' sets are good.
+2. 60p seems to be best.
