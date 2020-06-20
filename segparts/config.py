@@ -32,6 +32,9 @@ class Config:
         ### Testing configuration.
         self._parser.add_argument('--test_batch_size', type=int, default=4, help='batch size for testing')
         
+        ### Finetune on isPart classification
+        self._parser.add_argument('--is_part_csv', type=str, default='path/to/is_part_csv')
+
         ## test on train
         self._parser.add_argument('--test_image_dir', type=str, default='path/to/images')
         self._parser.add_argument('--test_label_dir', type=str, default='path/to/labels')
