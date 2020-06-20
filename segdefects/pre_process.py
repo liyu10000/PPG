@@ -102,10 +102,10 @@ def slice(data_dir, save_dir, step_size, patch_size, binary=True, whole_mask_dir
         binary: whether or not to save masks as binary or RGB
         whole_mask_dir: directory with whole vessel segmentation masks
     """
-    image_dir = os.path.join(data_dir, 'images2')
-    label_dir = os.path.join(data_dir, 'labels2')
-    image_dir2 = os.path.join(save_dir, 'images2-delam')
-    label_dir2 = os.path.join(save_dir, 'labels2-delam')
+    image_dir = os.path.join(data_dir, 'images3')
+    label_dir = os.path.join(data_dir, 'labels3')
+    image_dir2 = os.path.join(save_dir, 'images3')
+    label_dir2 = os.path.join(save_dir, 'labels3')
     os.makedirs(image_dir2, exist_ok=True)
     os.makedirs(label_dir2, exist_ok=True)
     files = os.listdir(image_dir)
@@ -130,22 +130,22 @@ def slice(data_dir, save_dir, step_size, patch_size, binary=True, whole_mask_dir
                 img_patch = img[h:h+patch_size, w:w+patch_size]
                 mask_patch = mask[h:h+patch_size, w:w+patch_size]
 
-                # data augmentation on delamination
-                if np.any(mask_patch[:, :, 1] > 0):
-                    # randomly shift cut positions
-                    h += random.randint(-step_size, step_size)
-                    w += random.randint(-step_size, step_size)
-                    # ensure patch is available
-                    h = max(0, min(H - patch_size, h))
-                    w = max(0, min(W - patch_size, w))
-                    # recut patch
-                    img_patch = img[h:h+patch_size, w:w+patch_size]
-                    mask_patch = mask[h:h+patch_size, w:w+patch_size]
-                    # if new patch does not include delamination, skip
-                    if np.all(mask_patch[:, :, 1] == 0):
-                        continue
-                else:
-                    continue
+                # # data augmentation on delamination
+                # if np.any(mask_patch[:, :, 1] > 0):
+                #     # randomly shift cut positions
+                #     h += random.randint(-step_size, step_size)
+                #     w += random.randint(-step_size, step_size)
+                #     # ensure patch is available
+                #     h = max(0, min(H - patch_size, h))
+                #     w = max(0, min(W - patch_size, w))
+                #     # recut patch
+                #     img_patch = img[h:h+patch_size, w:w+patch_size]
+                #     mask_patch = mask[h:h+patch_size, w:w+patch_size]
+                #     # if new patch does not include delamination, skip
+                #     if np.all(mask_patch[:, :, 1] == 0):
+                #         continue
+                # else:
+                #     continue
 
                 # check if patch is within whole vessel mask
                 if whole_mask_dir is not None:
@@ -172,8 +172,8 @@ if __name__ == '__main__':
     # slice images/labels into small patches
     patch_size = 224
     step_size = patch_size // 2
-    data_dir = '../datadefects/highquality'
-    save_dir = '../datadefects/highquality-3cls-224'
+    data_dir = '../datadefects/lowquality'
+    save_dir = '../datadefects/lowquality-3cls-224'
     binary = False
-    whole_mask_dir = '../datadefects/labels_whole/set2'
+    whole_mask_dir = '../datadefects/labels_whole/set3'
     slice(data_dir, save_dir, step_size, patch_size, binary, whole_mask_dir)

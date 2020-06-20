@@ -163,7 +163,7 @@
 
 ### Exp12 (06/06/2020)
  - Idea
-0. Received new data set.
+0. Received 2nd data set.
 1. Augment delamination & corrosion on new high-q set. Augment corrosion on new low-q set.
 2. Found a fatal error in previous exps: delamination augmentation data overlaps with testing set!
 
@@ -175,3 +175,17 @@
  - Result
 1. expB is reasonably good, meaning only low-reso data is enough on low-reso images.
 2. For expA and expB, 60p is the best.
+
+
+
+### Exp13 (06/20/2020)
+ - Idea
+0. Received 3rd data set.
+1. As labels on three types are quite balanced, no augmentation is executed.
+
+ - Config
+1. Manually select 6 samples from new high-q set.
+2. Train on 1st, 2nd & 3rd data and test on 5in1st, 6in2nd set & 6in3rd, name prefix: bce_dice. 
+
+ - Result
+1. 

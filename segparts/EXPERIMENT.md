@@ -101,7 +101,7 @@
 4. BCE-DICE loss.
 
  - Config
-1. Total number of images is 362. Set aside 10 from set3 as test set. For old data, only use jpg3040 compressions.
+1. Total number of images is 399. Set aside 15 from set3 as test set. For old data, only use jpg3040 compressions.
 2. Train 90 epochs, save every 30 epochs.
 
  - Result

@@ -17,6 +17,7 @@ from data import generator
 
 cfg = Config().parse()
 print(cfg)
+os.environ["CUDA_VISIBLE_DEVICES"] = str(cfg.gpu)
 
 
 class Tester(object):
@@ -29,7 +30,7 @@ class Tester(object):
         self.label_dir = cfg.test_label_dir if cfg.test_label_dir != 'None' else None
         self.pred_mask_dir = cfg.pred_mask_dir
         os.makedirs(self.pred_mask_dir, exist_ok=True)
-        self.device = torch.device('cuda:{}'.format(cfg.gpu))
+        self.device = torch.device('cuda:0')
         # torch.set_default_tensor_type("torch.cuda.FloatTensor")
         torch.backends.cudnn.benchmark = True
         # load weights

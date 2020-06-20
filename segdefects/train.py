@@ -22,6 +22,7 @@ print(cfg)
 seed = cfg.seed
 random.seed(seed)
 os.environ["PYTHONHASHSEED"] = str(seed)
+os.environ["CUDA_VISIBLE_DEVICES"] = str(cfg.gpu)
 np.random.seed(seed)
 torch.cuda.manual_seed(seed)
 torch.backends.cudnn.deterministic = True
@@ -48,7 +49,7 @@ class Trainer(object):
         self.best_model = cfg.model_path
         self.best_loss = float("inf")
         self.phases = ["train", "val"]
-        self.device = torch.device('cuda:{}'.format(cfg.gpu))
+        self.device = torch.device('cuda:0')
         # torch.set_default_tensor_type("torch.cuda.FloatTensor")
         self.net = model
         if self.resume:
