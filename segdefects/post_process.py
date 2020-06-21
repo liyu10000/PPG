@@ -53,18 +53,20 @@ def _evaluate(true_mask, pred_mask, same_channel):
     true_mask_b = np.sum(true_mask, axis=2)
     pred_mask_b = np.sum(pred_mask, axis=2)
     intersect_b = np.sum(intersect, axis=2)
-    precision = np.count_nonzero(intersect_b) / np.count_nonzero(pred_mask_b)
+    
     try:
+        precision = np.count_nonzero(intersect_b) / np.count_nonzero(pred_mask_b)
         recall = np.count_nonzero(intersect_b) / np.count_nonzero(true_mask_b)
     except:
-        recall = 0.0
+        precision = 1.0
+        recall = 1.0
     # calculate per channel recall
     ch_recalls = []
     for i in range(3):
         if np.count_nonzero(true_mask[:,:,i]) != 0:
             r = np.count_nonzero(intersect[:,:,i]) / np.count_nonzero(true_mask[:,:,i])
         else:
-            r = 0
+            r = 1.0
         ch_recalls.append(r)
     # if pred_mask comes in RGB, calculate per channel precision and iou
     ch_precisions = []
@@ -75,7 +77,7 @@ def _evaluate(true_mask, pred_mask, same_channel):
             if np.count_nonzero(pred_mask[:,:,i]) != 0:
                 p = np.count_nonzero(intersect[:,:,i]) / np.count_nonzero(pred_mask[:,:,i])
             else:
-                p = 0
+                p = 1.0
             ch_precisions.append(p)
             iou = np.count_nonzero(intersect[:,:,i]) / np.count_nonzero(union[:,:,i])
             ch_ious.append(iou)

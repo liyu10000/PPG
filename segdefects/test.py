@@ -40,7 +40,7 @@ class Tester(object):
         if not os.path.isfile(best_model):
             print('*****WARNING*****: {} does not exist.'.format(best_model))
             sys.exit()
-        checkpoint = torch.load(best_model)
+        checkpoint = torch.load(best_model, map_location='cuda:0')
         self.epoch = checkpoint["epoch"]
         self.best_loss = checkpoint["loss"]
         self.net.load_state_dict(checkpoint["state_dict"])

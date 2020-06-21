@@ -182,10 +182,50 @@
  - Idea
 0. Received 3rd data set.
 1. As labels on three types are quite balanced, no augmentation is executed.
+3. Changed ways of calculating precision and recall.
 
  - Config
 1. Manually select 6 samples from new high-q set.
-2. Train on 1st, 2nd & 3rd data and test on 5in1st, 6in2nd set & 6in3rd, name prefix: bce_dice. 
+2. Train on 1st, 2nd & 3rd data and test on 5in1st, 6in2nd & 6in3rd set, name prefix: bce_dice. 
+
+ - Result
+1. For all three sets of test data, 30p is the best. (under new p&r calculating scheme)
+
+
+### Exp14 (06/20/2020)
+ - Idea
+1. Work on 1st, 2nd and 3rd dataset. 
+2. *3-class* segmentation.
+
+ - Config
+1. Same data split as in *Exp13*.
 
  - Result
 1. 
+
+
+### Exp15 (06/21/2020)
+ - Idea
+1. Finetune patch-level predicted, pieced togethered defect labels, by concatenate it with original image and tune against ground truth labels, on image level.
+2. *1-class* finetune segmentation.
+3. 1st step: use bce_dice_60p.pth from *Exp12* to predict all patches (training and testing). 
+   2nd step: piece together all patches to form complete predicted labels. Areas not covered are set to zero, and overlapping areas are averaged.
+   3rd step: prepare images/labels in size 640x480.
+
+ - Config
+1. train 220, val 27, test 17.
+3. 90 epochs, save every 30 epochs.
+
+ - Result
+1. Segmentation results are slightly better than *Exp13*. Improved on recall, but degraded on precision.
+2. Results on 3rd set are not good. I guess it's because the initial labels are from *Exp12*, which is not trained on 3rd set. The initial guess label of 3rd set are bad.
+3. 30p is the best.
+
+
+### Exp16 (06/21/2020)
+ - Idea
+1. Same idea as in *Exp15*, but use bce_dice_30p.pth from *Exp13* to generate initial guess labels.
+
+ - Result
+1. Not much different to *Exp13*.
+
