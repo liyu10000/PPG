@@ -41,8 +41,12 @@ def calc_mean_std(dataset):
 
 
 def get_transforms(phase):
-    mean = (0.433, 0.445, 0.518)
-    std = (0.277, 0.254, 0.266)
+    if cfg.whole_mask_dir:
+        mean = (0.433, 0.445, 0.518, 0.0)
+        std = (0.277, 0.254, 0.266, 1.0)
+    else:
+        mean = (0.433, 0.445, 0.518)
+        std = (0.277, 0.254, 0.266)
     list_transforms = []
     if phase == "train":
         list_transforms.extend(
@@ -77,6 +81,10 @@ class PPGDataset(Dataset):
         name = pair[0]
         img = cv2.imread(pair[1])
         mask = cv2.imread(pair[2], cv2.IMREAD_UNCHANGED)
+        if len(pair) == 4:
+            whole_mask = cv2.imread(pair[3], cv2.IMREAD_UNCHANGED)
+            whole_mask = whole_mask.reshape((480, 640, 1))
+            img = np.concatenate([img, whole_mask], axis=2)
         augmented = self.transforms(image=img, mask=mask)
         img = augmented['image'] # CxHxW
         mask = augmented['mask'] # 1xHxWxC or 1xHxW
@@ -95,22 +103,25 @@ class PPGDataset(Dataset):
 def generator(
             image_dir,
             label_dir,
+            whole_mask_dir,
             phase,
             classes,
             train_val_split=[], # should be [partition numbers, partition index]
             batch_size=8,
             num_workers=4,
             ):
-    if isinstance(image_dir, list):
-        image_dir = image_dir[1:]
-        label_dir = label_dir[1:]
-    else:
-        image_dir = [image_dir]
-        label_dir = [label_dir]
+    image_dir = image_dir[1:]
+    label_dir = label_dir[1:]
+    whole_mask_dir = whole_mask_dir[1:]
     pairs = []
-    for img_dir, lbl_dir in zip(image_dir, label_dir):
-        keys = [f for f in os.listdir(img_dir) if f.endswith('.png')]
-        pairs += [(f[:-4], os.path.join(img_dir, f), os.path.join(lbl_dir, f)) for f in keys]
+    if whole_mask_dir:
+        for img_dir, lbl_dir, wmk_dir in zip(image_dir, label_dir, whole_mask_dir):
+            keys = [f for f in os.listdir(img_dir) if f.endswith('.png')]
+            pairs += [(f[:-4], os.path.join(img_dir, f), os.path.join(lbl_dir, f), os.path.join(wmk_dir, f)) for f in keys]
+    else:
+        for img_dir, lbl_dir in zip(image_dir, label_dir):
+            keys = [f for f in os.listdir(img_dir) if f.endswith('.png')]
+            pairs += [(f[:-4], os.path.join(img_dir, f), os.path.join(lbl_dir, f)) for f in keys]
     random.Random(seed).shuffle(pairs) # shuffle with seed, so that yielding same sampling
     if train_val_split:
         num, idx = train_val_split
@@ -134,29 +145,44 @@ def generator(
 
 if __name__ == "__main__":
     # test dataloader
-    image_dir = "../dataparts/Segmentation_Test_Set/images_3cls"
-    label_dir = "../dataparts/Segmentation_Test_Set/labels_3cls_new"
-    phase = "val"
-    mean = (0.0, 0.0, 0.0)
-    std = (1.0, 1.0, 1.0)
-    keys = [f[:-4] for f in os.listdir(image_dir) if f.endswith('.png')]
-    dataset = PPGDataset(keys, image_dir, label_dir, phase)
+    image_dir = ["../dataparts/segpart/images", "../dataparts/segpart/images_aug3040"]
+    label_dir = ["../dataparts/segpart/labels", "../dataparts/segpart/labels_aug3040"]
+    whole_mask_dir = ["../dataparts/segwhole/labels", "../dataparts/segwhole/labels_aug3040"]
+    cfg.whole_mask_dir = whole_mask_dir
+    phase = "train"
+    classes = 3
+
+    # image_dir = image_dir[1:]
+    # label_dir = label_dir[1:]
+    # whole_mask_dir = whole_mask_dir[1:]
+    pairs = []
+    if whole_mask_dir:
+        for img_dir, lbl_dir, wmk_dir in zip(image_dir, label_dir, whole_mask_dir):
+            keys = [f for f in os.listdir(img_dir) if f.endswith('.png')]
+            pairs += [(f[:-4], os.path.join(img_dir, f), os.path.join(lbl_dir, f), os.path.join(wmk_dir, f)) for f in keys]
+    else:
+        for img_dir, lbl_dir in zip(image_dir, label_dir):
+            keys = [f for f in os.listdir(img_dir) if f.endswith('.png')]
+            pairs += [(f[:-4], os.path.join(img_dir, f), os.path.join(lbl_dir, f)) for f in keys]
+    print(phase, len(pairs))
+    dataset = PPGDataset(pairs, phase, classes)
 
     # output mask as img for checking
     tmp_dir = './tmp'
     os.makedirs(tmp_dir, exist_ok=True)
-    print('# files', len(dataset))
+
     for i in range(len(dataset)):
+        # print(i)
         name, img, mask = dataset[i]
-        print(name, img.shape, mask.shape)
-        
+        # print(name, img.shape, mask.shape)
         img = img.numpy().transpose((1, 2, 0))
         mask = mask.numpy().transpose((1, 2, 0))
         img *= 255
         mask *= 255
-        cv2.imwrite(os.path.join(tmp_dir, name+'.jpg'), img)
-        cv2.imwrite(os.path.join(tmp_dir, name+'_mask.jpg'), mask)
-        # break
+        cv2.imwrite(os.path.join(tmp_dir, name+'.png'), img[:, :, :3])
+        cv2.imwrite(os.path.join(tmp_dir, name+'_whole.png'), img[:, :, 3])
+        cv2.imwrite(os.path.join(tmp_dir, name+'_part.png'), mask)
+        
 
     # # calculate mean and std of dataset
     # mean, std = calc_mean_std(dataset)

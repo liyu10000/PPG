@@ -24,6 +24,7 @@ class Tester(object):
     '''This class takes care of testing of our model'''
     def __init__(self, model, cfg):
         self.classes = cfg.classes
+        self.whole_mask_dir = cfg.whole_mask_dir
         self.num_workers = cfg.num_workers
         self.batch_size = cfg.test_batch_size
         self.image_dir = cfg.test_image_dir
@@ -49,6 +50,7 @@ class Tester(object):
         self.dataloader = generator(
                                     image_dir=self.image_dir,
                                     label_dir=self.label_dir,
+                                    whole_mask_dir=self.whole_mask_dir,
                                     phase="test",
                                     classes=self.classes,
                                     batch_size=self.batch_size,
@@ -91,7 +93,7 @@ if __name__ == '__main__':
     #     classes=4,                 # define number of output labels
     # )
     model = smp.Unet("xception", 
-                     in_channels=3, 
+                     in_channels=4 if cfg.whole_mask_dir else 3, 
                      classes=cfg.classes, 
                      encoder_weights=None, 
                      activation=None)

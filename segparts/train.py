@@ -33,6 +33,7 @@ class Trainer(object):
     '''This class takes care of training and validation of our model'''
     def __init__(self, model, cfg):
         self.classes = cfg.classes
+        self.whole_mask_dir = cfg.whole_mask_dir
         self.image_dir = cfg.image_dir
         self.label_dir = cfg.label_dir
         self.num_workers = cfg.num_workers
@@ -74,6 +75,7 @@ class Trainer(object):
             phase: generator(
                 image_dir=self.image_dir,
                 label_dir=self.label_dir,
+                whole_mask_dir=self.whole_mask_dir,
                 phase=phase,
                 classes=self.classes,
                 train_val_split=self.train_val_split,
@@ -151,7 +153,7 @@ if __name__ == "__main__":
     #     classes=4,                 # define number of output labels
     # )
     model = smp.Unet("xception", 
-                     in_channels=3, 
+                     in_channels=4 if cfg.whole_mask_dir else 3, 
                      classes=cfg.classes, 
                      encoder_weights="imagenet", 
                      activation=None)

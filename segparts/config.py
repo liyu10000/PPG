@@ -12,6 +12,7 @@ class Config:
         self._parser.add_argument('--seed', type=int, default=42, help='set the random seed for random, np, and torch')
         self._parser.add_argument('--gpu', type=int, default=0, help='choose id of gpu to use')
         self._parser.add_argument('--classes', type=int, default=3, choices=[6, 3, 1], help='number of classes')
+        self._parser.add_argument('--whole_mask_dir', action='append', default=['path/to/whole/mask/'])
         self._parser.add_argument('--model_path', type=str, default='./model.pth')
         self._parser.add_argument('--num_workers', type=int, default=4)
         
@@ -36,8 +37,8 @@ class Config:
         self._parser.add_argument('--is_part_csv', type=str, default='path/to/is_part_csv')
 
         ## test on train
-        self._parser.add_argument('--test_image_dir', type=str, default='path/to/images')
-        self._parser.add_argument('--test_label_dir', type=str, default='path/to/labels')
+        self._parser.add_argument('--test_image_dir', action='append', default=['path/to/images'])
+        self._parser.add_argument('--test_label_dir', action='append', default=['path/to/labels'])
         self._parser.add_argument('--pred_mask_dir', type=str, default='path/to/pred_masks')
         
         ## test on separate testset (images/labels)
