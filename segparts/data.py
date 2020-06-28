@@ -41,7 +41,7 @@ def calc_mean_std(dataset):
 
 
 def get_transforms(phase):
-    if cfg.whole_mask_dir:
+    if len(cfg.whole_mask_dir) > 1:
         mean = (0.433, 0.445, 0.518, 0.0)
         std = (0.277, 0.254, 0.266, 1.0)
     else:

@@ -189,7 +189,7 @@
 2. Train on 1st, 2nd & 3rd data and test on 5in1st, 6in2nd & 6in3rd set, name prefix: bce_dice. 
 
  - Result
-1. For all three sets of test data, 30p is the best. (under new p&r calculating scheme)
+1. For all three sets of test data, 90p is the best. (under new p&r calculating scheme)
 
 
 ### Exp14 (06/20/2020)
@@ -201,7 +201,7 @@
 1. Same data split as in *Exp13*.
 
  - Result
-1. 
+1. Results are bad.
 
 
 ### Exp15 (06/21/2020)

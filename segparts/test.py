@@ -93,7 +93,7 @@ if __name__ == '__main__':
     #     classes=4,                 # define number of output labels
     # )
     model = smp.Unet("xception", 
-                     in_channels=4 if cfg.whole_mask_dir else 3, 
+                     in_channels=4 if len(cfg.whole_mask_dir)>1 else 3, 
                      classes=cfg.classes, 
                      encoder_weights=None, 
                      activation=None)

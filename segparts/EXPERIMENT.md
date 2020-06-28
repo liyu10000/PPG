@@ -107,3 +107,19 @@
  - Result
 1. Test result on 'Segmentation_Test_Set' and 'set3' sets are good.
 2. 60p seems to be best.
+
+
+### Exp8 (06/27/2020)
+ - Idea
+1. Use whole ship mask as 4th channel at training part segmentation.
+2. *3-class* segmentation.
+
+ - Config
+1. Use original images for part segmentation, together with their whole ship masks.
+2. Also use aug_3040 images.
+3. Try BCE and BCE-DICE, and BCE-DICE (plain, without random contrast and random brightness aug, because it would slightly change whole ship mask).
+
+ - Result
+1. BCE seems to be best on 1st set, BCE-DICE seems to be best on 2nd set. 
+2. BCE-DICE produces excess predictions outside of ship, but can get better by only considering ship regions.
+3. Plain BCE-DICE reduced excess predictions, but seemed to yield a lower performance.
