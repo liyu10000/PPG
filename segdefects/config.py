@@ -30,6 +30,9 @@ class Config:
         self._parser.add_argument('--resume', type=str, default='False', choices=['True', 'False'])
         self._parser.add_argument('--resume_from', type=int, default=0, help='number of epochs to start counting')
         
+        self._parser.add_argument('--names_file', type=str, default='', help='csv file containing names list')
+        self._parser.add_argument('--test_round', type=int, default=0, help='round of train/test')
+
         ### Testing configuration.
         self._parser.add_argument('--test_batch_size', type=int, default=32, help='batch size for testing')
         
