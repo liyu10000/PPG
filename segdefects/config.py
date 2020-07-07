@@ -21,24 +21,20 @@ class Config:
         self._parser.add_argument('--image_dir', action='append', default=['path/to/images'])
         self._parser.add_argument('--label_dir', action='append', default=['path/to/labels'])
         self._parser.add_argument('--train_val_split', type=str, default='', help='[num of partitions, idx of partition for val]')
-        self._parser.add_argument('--train_batch_size', type=int, default=32, help='batch size for training')
-        self._parser.add_argument('--val_batch_size', type=int, default=32, help='batch size for validation')
-        self._parser.add_argument('--accumulation_steps', type=int, default=32, help='number of steps to update params')
+        self._parser.add_argument('--train_batch_size', type=int, default=64, help='batch size for training')
+        self._parser.add_argument('--val_batch_size', type=int, default=64, help='batch size for validation')
+        self._parser.add_argument('--accumulation_steps', type=int, default=64, help='number of steps to update params')
         self._parser.add_argument('--lr', type=float, default=0.0001)
         self._parser.add_argument('--num_epochs', type=int, default=30)
         self._parser.add_argument('--save', type=str, default='best', choices=['best', 'all'])
         self._parser.add_argument('--resume', type=str, default='False', choices=['True', 'False'])
         self._parser.add_argument('--resume_from', type=int, default=0, help='number of epochs to start counting')
-        
         self._parser.add_argument('--names_file', type=str, default='', help='csv file containing names list')
-        self._parser.add_argument('--test_round', type=int, default=0, help='round of train/test')
 
         ### Testing configuration.
-        self._parser.add_argument('--test_batch_size', type=int, default=32, help='batch size for testing')
-        
-        ## test on train
-        self._parser.add_argument('--test_image_dir', type=str, default='path/to/images')
-        self._parser.add_argument('--test_label_dir', type=str, default='path/to/labels')
+        self._parser.add_argument('--test_batch_size', type=int, default=64, help='batch size for testing')
+        self._parser.add_argument('--test_image_dir', action='append', default=['path/to/test/images'])
+        self._parser.add_argument('--test_label_dir', action='append', default=['path/to/test/labels'])
         self._parser.add_argument('--pred_mask_dir', type=str, default='path/to/pred_masks')
     
 

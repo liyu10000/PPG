@@ -229,3 +229,26 @@
  - Result
 1. Not much different to *Exp13*.
 
+
+### Exp17 (07/02/2020)
+ - Idea
+0. 4th set of data arrived.
+1. Iteratively run train/test to find out images that fail defect segmentation.
+2. BCE-DICE loss
+
+ - Config
+1. 10 rounds of train/test splits on first three sets. 11th and 12th rounds for 4th set. 13th round for missing data.
+2. Determine images fail in segmentation if F1 score is less than 0.2.
+
+
+### Exp18 (07/06/2020)
+ - Idea
+1. Train on all four sets, with/without failing samples. Set aside test data for comparison.
+2. BCE-DICE loss
+
+ - Config
+1. Num of total images: 347. Num of test: 18. Num of train: 329, or 293 without failing samples.
+2. 30 epochs.
+
+ - Result
+1. No significant difference between two training strategies.

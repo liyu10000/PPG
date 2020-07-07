@@ -93,9 +93,12 @@ def evaluate(true_dir, pred_dir, same_channel=False):
     ch_recalls, ch_precisions = [], []
     ch_ious = []
     for name in pred_masks:
+        if not os.path.isfile(os.path.join(true_dir, name)):
+            continue
         t = cv2.imread(os.path.join(true_dir, name))
         p = cv2.imread(os.path.join(pred_dir, name))
         pr, rc, ch_rcs, ch_prs, ious = _evaluate(t, p, same_channel)
+        print('{} {:.4f} {:.4f} {:.4f}'.format(name, pr, rc, 2*pr*rc/(pr+rc+0.01)))
         precision.append(pr)
         recall.append(rc)
         ch_recalls.append(ch_rcs)
@@ -113,18 +116,6 @@ def evaluate(true_dir, pred_dir, same_channel=False):
 
 
 if __name__ == '__main__':
-    # # joint patches back to big images
-    # patch_dir = '../datadefects/exps/exp9/bce_dice.911_5highq'
-    # joint_dir = '../datadefects/exps/exp9/bce_dice.911_5highq_joint'
-    # joint(patch_dir, joint_dir)
-
-    # # calculate precision and recall
-    # true_dir = '../datadefects/highquality/labels'
-    # pred_dir = '../datadefects/exps/exp9/bce_dice.911_5highq_joint'
-    # same_channel = False
-    # evaluate(true_dir, pred_dir, same_channel)
-
-
     # work by passing arguments
     parser = argparse.ArgumentParser()
     parser.add_argument('--patch_dir', type=str, default='path/to/patches/for/joint')
@@ -133,10 +124,10 @@ if __name__ == '__main__':
     parser.add_argument('--pred_dir', type=str, default='path/to/pred/images')
     cfg = parser.parse_args()
 
-    # joint patches back to big images
-    patch_dir = cfg.patch_dir
-    joint_dir = cfg.joint_dir
-    joint(patch_dir, joint_dir)
+    # # joint patches back to big images
+    # patch_dir = cfg.patch_dir
+    # joint_dir = cfg.joint_dir
+    # joint(patch_dir, joint_dir)
 
     # calculate precision and recall
     true_dir = cfg.true_dir

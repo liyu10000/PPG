@@ -102,10 +102,10 @@ def slice(data_dir, save_dir, step_size, patch_size, binary=True, whole_mask_dir
         binary: whether or not to save masks as binary or RGB
         whole_mask_dir: directory with whole vessel segmentation masks
     """
-    image_dir = os.path.join(data_dir, 'images3')
-    label_dir = os.path.join(data_dir, 'labels3')
-    image_dir2 = os.path.join(save_dir, 'images3')
-    label_dir2 = os.path.join(save_dir, 'labels3')
+    image_dir = os.path.join(data_dir, 'images2')
+    label_dir = os.path.join(data_dir, 'labels2')
+    image_dir2 = os.path.join(save_dir, 'images2_wn')
+    label_dir2 = os.path.join(save_dir, 'labels2_wn')
     os.makedirs(image_dir2, exist_ok=True)
     os.makedirs(label_dir2, exist_ok=True)
     files = os.listdir(image_dir)
@@ -172,8 +172,8 @@ if __name__ == '__main__':
     # slice images/labels into small patches
     patch_size = 224
     step_size = patch_size // 2
-    data_dir = '../datadefects/lowquality'
-    save_dir = '../datadefects/lowquality-3cls-224'
+    data_dir = '../datadefects/highquality/'
+    save_dir = '../datadefects/highquality-3cls-224'
     binary = False
-    whole_mask_dir = '../datadefects/labels_whole/set3'
+    whole_mask_dir = '../datadefects/labels_whole/set2'
     slice(data_dir, save_dir, step_size, patch_size, binary, whole_mask_dir)

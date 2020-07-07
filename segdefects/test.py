@@ -24,6 +24,10 @@ os.environ["CUDA_VISIBLE_DEVICES"] = str(cfg.gpu)
 class Tester(object):
     '''This class takes care of testing of our model'''
     def __init__(self, model, cfg):
+        df = pd.read_csv(cfg.names_file)
+        df = df[df.test == 1]
+        names = df.name.to_list()
+        print(len(names), names)
         self.num_workers = cfg.num_workers
         self.batch_size = cfg.test_batch_size
         self.image_dir = cfg.test_image_dir
@@ -48,6 +52,7 @@ class Tester(object):
         self.net.eval()
         # initiate data loader
         self.dataloader = generator(
+                                    names=names,
                                     image_dir=self.image_dir,
                                     label_dir=self.label_dir,
                                     phase="test",

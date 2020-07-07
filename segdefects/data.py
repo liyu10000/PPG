@@ -108,7 +108,7 @@ class PPGDataset(Dataset):
 
 
 def generator(
-            test_names,
+            names,
             image_dir,
             label_dir,
             phase,
@@ -125,9 +125,11 @@ def generator(
         image_dir = [image_dir]
         label_dir = [label_dir]
     pairs = []
-    test_names = set(test_names)
+    names = set(names)
     for img_dir, lbl_dir in zip(image_dir, label_dir):
-        keys = [f for f in os.listdir(img_dir) if (f.endswith('.png')) and (not f.split('_H')[0] in test_names)]
+        # keys = [f for f in os.listdir(img_dir) if (f.endswith('.png')) and (not f.split('_H')[0] in names)]
+        keys = [f for f in os.listdir(img_dir) if (f.endswith('.png')) and (f.split('_H')[0] in names)]
+        # keys = [f for f in os.listdir(img_dir) if (f.endswith('.png'))]
         pairs += [(f[:-4], os.path.join(img_dir, f), os.path.join(lbl_dir, f)) for f in keys]
     random.Random(seed).shuffle(pairs) # shuffle with seed, so that yielding same sampling
     if train_val_split:

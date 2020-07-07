@@ -34,10 +34,9 @@ class Trainer(object):
     '''This class takes care of training and validation of our model'''
     def __init__(self, model, cfg):
         df = pd.read_csv(cfg.names_file)
+        df = df[(df.test == 0) & (df.F1 > 0.2)]
         names = df.name.to_list()
-        partition = len(names) // 10
-        test_names = names[partition*cfg.test_round:partition*(cfg.test_round+1)]
-        print(test_names)
+        print(len(names), names)
         self.classes = cfg.classes
         self.image_dir = cfg.image_dir
         self.label_dir = cfg.label_dir
@@ -80,7 +79,7 @@ class Trainer(object):
         self.scheduler = ReduceLROnPlateau(self.optimizer, mode="min", patience=3, verbose=True)
         self.dataloaders = {
             phase: generator(
-                test_names=test_names,
+                names=names,
                 image_dir=self.image_dir,
                 label_dir=self.label_dir,
                 phase=phase,
