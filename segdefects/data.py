@@ -43,8 +43,8 @@ def calc_mean_std(dataset):
 
 
 def get_transforms(phase):
-    mean = (0.433, 0.445, 0.518)
-    std = (0.277, 0.254, 0.266)
+    mean = (0.434, 0.447, 0.534)
+    std = (0.281, 0.267, 0.271)
     list_transforms = []
     if phase == "train":
         list_transforms.extend(
@@ -72,7 +72,7 @@ class PPGDataset(Dataset):
         self.pairs = pairs
         self.phase = phase
         self.classes = classes
-        self.weight = weight # in the form [a, b, c]
+        self.weight = weight
         self.transforms = get_transforms(phase)
 
     def __getitem__(self, idx):
@@ -86,21 +86,13 @@ class PPGDataset(Dataset):
         # print(img.shape, mask.shape)
         if len(mask.shape) == 4: # when mask is non-grayscale
             mask = mask[0].permute(2, 0, 1) # CxHxW
-        if self.weight and mask.shape[0] == 1:
-            print('Cannot assign weight when raw input mask is grayscale')
-            sys.exit()
         C, H, W = mask.shape
-        weight = torch.tensor(self.weight)
-        if self.weight:
-            if self.classes == 1:
-                weight = torch.ones_like(mask)
-                for i in range(C):
-                    weight[i, :, :] += mask[i, :, :]* (self.weight[i] - 1)
-                weight = weight.max(dim=0, keepdim=True).values
-            else: # classes = 3
-                weight = weight.view(C, 1).expand(C, H*W).view(C, H, W)
         if self.classes == 1 and C == 3: # convert mask to grayscale
             mask = (mask.sum(dim=0, keepdim=True) > 0).type_as(mask)
+        if self.weight != 1.0:
+            weight = torch.where(mask > 0, torch.tensor(1.0), torch.tensor(self.weight))
+        else:
+            weight = torch.tensor(self.weight)
         return name, img, mask, weight
 
     def __len__(self):
@@ -154,8 +146,8 @@ def generator(
 
 if __name__ == "__main__":
     # test dataloader
-    image_dir = "../datadefects/highquality-3cls-224/images2-delam"
-    label_dir = "../datadefects/highquality-3cls-224/labels2-delam"
+    image_dir = "../datadefects/highquality-3cls-224/images2"
+    label_dir = "../datadefects/highquality-3cls-224/labels2"
     phase = "val"
     classes = 1
     weight = [1.0, 2.0, 3.0]

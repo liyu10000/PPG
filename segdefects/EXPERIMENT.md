@@ -252,3 +252,34 @@
 
  - Result
 1. No significant difference between two training strategies.
+
+
+### Exp19 (07/15/2020)
+ - Idea
+1. Use smaller backbone: resnet18, resnet34. Use all training samples.
+2. BCE-DICE loss
+
+ - Config
+1. 30 epochs.
+
+ - Result
+1. Resnet18 is obviously worse than xception.
+2. Resnet34 is almost the same with xception, only with slight degradation.
+
+
+### Exp20 (07/16/2020)
+ - Idea
+1. Got 5th dataset. Use all data in this experiment. Augment on low-reso images.
+2. Assign a lower weight to background at training. (1.0, 0.9, 0.5)
+3. Slice patches into smaller sizes (128) and separate background patches from defect patches.
+4. File naming: w05, w09, w10 are exps on size 224 and all data. 224nobg_w10 is on size 224 and without background patches. 128all_w05, 128all_w09 are exps on size 128 and all data.
+
+ - Config
+1. Combined individual sets into a big set.
+2. Removed all defect type specific augmentation data.
+3. 30 epochs. BCE-DICE. Use resnet34 as backbone.
+
+ - Result
+1. For comparison in w05, w09, w10, Weight 1.0 (the default setup of previous experiments) is worst in terms of F1, Weight 0.9 and 0.5 share the same F1 scores, with alternating precision and recall.
+2. For comparison in 128 and 224 patch size, 128 doesn't yield the same performance as 224. So stick with 224.
+3. For comparison in training on all data and training on defect-only data, defect-only data gets better results.

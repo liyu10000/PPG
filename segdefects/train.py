@@ -34,7 +34,8 @@ class Trainer(object):
     '''This class takes care of training and validation of our model'''
     def __init__(self, model, cfg):
         df = pd.read_csv(cfg.names_file)
-        df = df[(df.test == 0) & (df.F1 > 0.2)]
+        # df = df[(df.test == 0) & (df.F1 > cfg.f1)]
+        df = df[df.test == 0]
         names = df.name.to_list()
         print(len(names), names)
         self.classes = cfg.classes
@@ -63,7 +64,7 @@ class Trainer(object):
             self.net.load_state_dict(checkpoint["state_dict"])
             print('loaded {}, current loss: {}'.format(cfg.model_path, self.best_loss))
         self.net = self.net.to(self.device)
-        self.weight = [float(w) for w in cfg.weight.split(',')] if cfg.weight != '' else []
+        self.weight = cfg.weight
         if cfg.train_val_split:
             num, idx = cfg.train_val_split.split(',')
             self.train_val_split = [int(num), int(idx)]
@@ -103,7 +104,7 @@ class Trainer(object):
         targets = targets.to(self.device)
         weights = weights.to(self.device)
         outputs = self.net(images)
-        if self.weight:
+        if self.weight != 1.0:
             loss = self.criterion(outputs, targets, reduction='none')
             loss = loss * weights
             loss = loss.mean()
@@ -170,7 +171,7 @@ if __name__ == "__main__":
     #     activation=None,           # activation function, default is None, can choose 'sigmoid'
     #     classes=4,                 # define number of output labels
     # )
-    model = smp.Unet("xception", 
+    model = smp.Unet(cfg.backbone, 
                      in_channels=3, 
                      classes=cfg.classes, 
                      encoder_weights="imagenet", 

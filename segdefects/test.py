@@ -57,7 +57,7 @@ class Tester(object):
                                     label_dir=self.label_dir,
                                     phase="test",
                                     classes=self.classes,
-                                    weight=[],
+                                    weight=1.0,
                                     batch_size=self.batch_size,
                                     num_workers=self.num_workers,
                                     )
@@ -96,7 +96,7 @@ if __name__ == '__main__':
     #     activation=None,           # activation function, default is None, can choose 'sigmoid'
     #     classes=4,                 # define number of output labels
     # )
-    model = smp.Unet("xception", 
+    model = smp.Unet(cfg.backbone, 
                      in_channels=3, 
                      classes=cfg.classes, 
                      encoder_weights=None, 

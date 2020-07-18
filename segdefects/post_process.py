@@ -124,13 +124,15 @@ if __name__ == '__main__':
     parser.add_argument('--pred_dir', type=str, default='path/to/pred/images')
     cfg = parser.parse_args()
 
-    # # joint patches back to big images
-    # patch_dir = cfg.patch_dir
-    # joint_dir = cfg.joint_dir
-    # joint(patch_dir, joint_dir)
+    # joint patches back to big images
+    patch_dir = cfg.patch_dir
+    joint_dir = cfg.joint_dir
+    if not patch_dir.startswith('path'):
+        joint(patch_dir, joint_dir)
 
     # calculate precision and recall
     true_dir = cfg.true_dir
     pred_dir = cfg.pred_dir
     same_channel = False
-    evaluate(true_dir, pred_dir, same_channel)
+    if not true_dir.startswith('path'):
+        evaluate(true_dir, pred_dir, same_channel)
