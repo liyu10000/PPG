@@ -283,3 +283,18 @@
 1. For comparison in w05, w09, w10, Weight 1.0 (the default setup of previous experiments) is worst in terms of F1, Weight 0.9 and 0.5 share the same F1 scores, with alternating precision and recall.
 2. For comparison in 128 and 224 patch size, 128 doesn't yield the same performance as 224. So stick with 224.
 3. For comparison in training on all data and training on defect-only data, defect-only data gets better results.
+4. For comparison in w09, w10 on defect-only data, and corresponding all data, w10 gets better results.
+5. Conclusion: patch 224, w10, on defect-only data gets best results.
+
+
+### Exp21 (07/19/2020)
+ - Idea
+1. Got additional data for 5th set.
+2. Follow the best param setup from *Exp20*, but train for 90 epochs in an iterative fashion.
+
+ - Config
+1. Train for 90 epochs.
+
+ - Result
+1. Checkpoints at 30th, 60th, 90th performs similarly in terms of F1 score. So stick with 30 epochs.
+
