@@ -83,7 +83,7 @@ def _evaluate(true_mask, pred_mask, same_channel):
             ch_ious.append(iou)
     return precision, recall, ch_recalls, ch_precisions, ch_ious
 
-def evaluate(true_dir, pred_dir, same_channel=False):
+def evaluate(true_dir, pred_dir, same_channel=False, whole_dir=None, defect_ratio=None):
     true_masks = os.listdir(true_dir)
     pred_masks = os.listdir(pred_dir)
     print('# true files in {}:{}\n# pred files in {}:{}'.format(true_dir, len(true_masks), pred_dir, len(pred_masks)))
@@ -97,6 +97,27 @@ def evaluate(true_dir, pred_dir, same_channel=False):
             continue
         t = cv2.imread(os.path.join(true_dir, name))
         p = cv2.imread(os.path.join(pred_dir, name))
+        if whole_dir is not None:
+            w = cv2.imread(os.path.join(whole_dir, name))
+            t_bin = np.sum(t, axis=2) > 0
+            w_bin = np.sum(w, axis=2) > 0
+            ratio = np.sum(t_bin) / np.sum(w_bin)
+            if ratio < defect_ratio:
+                # if ratio of defects over ship segmentation is small, flip defects with background
+                print(name, 'swap df with bg:', ratio)
+                ones = t == 255
+                zeros = t == 0
+                t[ones] = 0
+                t[zeros] = 255
+                ones = p == 255
+                zeros = p == 0
+                p[ones] = 0
+                p[zeros] = 255
+                zeros = w == 0
+                t[zeros] = 0
+                p[zeros] = 0
+                # cv2.imwrite(name+'.true.jpg', t)
+                # cv2.imwrite(name+'.pred.jpg', p)
         pr, rc, ch_rcs, ch_prs, ious = _evaluate(t, p, same_channel)
         print('{} {:.4f} {:.4f} {:.4f}'.format(name, pr, rc, 2*pr*rc/(pr+rc+0.01)))
         precision.append(pr)
@@ -122,6 +143,8 @@ if __name__ == '__main__':
     parser.add_argument('--joint_dir', type=str, default='path/to/dir/saving/joint/images')
     parser.add_argument('--true_dir', type=str, default='path/to/true/images')
     parser.add_argument('--pred_dir', type=str, default='path/to/pred/images')
+    parser.add_argument('--whole_dir', type=str, default='path/to/whole/images')
+    parser.add_argument('--defect_ratio', type=float, default=0.1)
     cfg = parser.parse_args()
 
     # joint patches back to big images
@@ -135,4 +158,9 @@ if __name__ == '__main__':
     pred_dir = cfg.pred_dir
     same_channel = False
     if not true_dir.startswith('path'):
-        evaluate(true_dir, pred_dir, same_channel)
+        whole_dir = cfg.whole_dir
+        defect_ratio = cfg.defect_ratio
+        if whole_dir.startswith('path'):
+            evaluate(true_dir, pred_dir, same_channel)
+        else:
+            evaluate(true_dir, pred_dir, same_channel, whole_dir, defect_ratio)
