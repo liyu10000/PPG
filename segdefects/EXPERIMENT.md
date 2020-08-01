@@ -298,3 +298,20 @@
  - Result
 1. Checkpoints at 30th, 60th, 90th performs similarly in terms of F1 score. So stick with 30 epochs.
 
+
+### Exp22 (07/26/2020)
+ - Idea
+1. Got additional data for 6th set.
+2. Follow the best param setup from *Exp20*: patch 224, resnet34, defect-only data.
+3. Comparison1: weight 0.9 vs. 1.0 (bce_dice_nobg_w09 vs. bce_dice_nobg_w10).
+   Comparison2: original data vs. original + HR-downsampled data (bce_dice_nobg_w10 vs. bce_dice_ds2_nobg_w10).
+   Comparison3: original HR+SR data vs. original HR data vs. original HR+SR data without some supres (bce_dice_nobg_w10 vs. bce_dice_hr_nobg_w10 vs. bce_dice_rm_nobg_w10).
+
+ - Config
+1. Train for 90 epochs.
+2. Use batch size 128, instead of 64.
+
+ - Result
+1. Comparison 1: Weight 1.0 is better than 0.9. Stick with w1.0.
+2. Comparison 2: Training with downsampled data doesn't lead to better results. Don't use.
+3. Comparison 3: Training on HR+SR > on HR+SR without some SR >> HR only, in terms of HR+SR combined test and also HR/SR separately.

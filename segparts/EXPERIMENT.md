@@ -123,3 +123,15 @@
 1. BCE seems to be best on 1st set, BCE-DICE seems to be best on 2nd set. 
 2. BCE-DICE produces excess predictions outside of ship, but can get better by only considering ship regions.
 3. Plain BCE-DICE reduced excess predictions, but seemed to yield a lower performance.
+
+
+### Exp9 (07/27/2020)
+ - Idea
+1. Whole ship segmentation. 
+2. Use all six sets of data. Do not do jpeg augmentation.
+
+ - Config
+1. Total number of images is 522. Use the same test (52 images) as in defect segmentation.
+2. Train 90 epochs, save every 30 epochs.
+
+ - Result
