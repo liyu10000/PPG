@@ -64,12 +64,17 @@ def show_labels_on_image(f, file_dict):
     plt.imshow(img)
     plt.show()
     
-def show_labels(f, file_dict, save_dir=None):
+def show_labels(f, file_dict, save_dir, wh=None):
     d = file_dict[f]
     path = d['path']
     # get image path and read in
     img_path = os.path.join(path, d['img'])
     img = cv2.imread(img_path)
+    if wh is not None:
+        H, W, _ = img.shape
+        w, h = wh
+        scale = np.array([w / W, h / H]).reshape(1, 2)
+        img = cv2.resize(img, (w, h))
     # create mask
     mask = np.zeros_like(img, dtype=img.dtype)
     # get label path and plot it on image
@@ -79,18 +84,14 @@ def show_labels(f, file_dict, save_dir=None):
         csvs = d[defect]
         csvs = [os.path.join(path, csv) for csv in csvs]
         labels = read_labels(csvs)
+        if wh is not None:
+            labels = [np.multiply(label, scale).astype(int) for label in labels]
         plot_labels(mask, labels, color, fill=True)
-    if save_dir is None:
-        f = plt.figure(1, figsize=(20,15))
-        plt.xticks([])
-        plt.yticks([])
-        plt.imshow(mask)
-        plt.show()
-    else:
-        os.makedirs(save_dir, exist_ok=True)
-        save_name = os.path.join(save_dir, f+'.png')
-        mask = cv2.cvtColor(mask, cv2.COLOR_RGB2BGR)
-        cv2.imwrite(save_name, mask)
+
+    os.makedirs(save_dir, exist_ok=True)
+    save_name = os.path.join(save_dir, f+'.png')
+    mask = cv2.cvtColor(mask, cv2.COLOR_RGB2BGR)
+    cv2.imwrite(save_name, mask)
 
 def slice(data_dir, save_dir, step_size, patch_size, binary=True, whole_mask_dir=None):
     """ Slice image&mask pairs into small patches
@@ -171,19 +172,20 @@ def slice(data_dir, save_dir, step_size, patch_size, binary=True, whole_mask_dir
 
 
 if __name__ == '__main__':
-    # # read csv files and generate masks
-    # data_dir = '../datadefects/raw/lowquality2'
-    # file_dict = parse_dir(data_dir)
-    # save_dir = '../datadefects/lowquality/labels2'
-    # for f in file_dict:
-    #     print('Processing', f)
-    #     show_labels(f, file_dict, save_dir)
+    # read csv files and generate masks
+    data_dir = '../datadefects/raw/mixquality'
+    file_dict = parse_dir(data_dir)
+    save_dir = '../datadefects/mixquality-640-480/labels'
+    wh = (640, 480)
+    for f in file_dict:
+        print('Processing', f)
+        show_labels(f, file_dict, save_dir, wh)
 
-    # slice images/labels into small patches
-    patch_size = 224
-    step_size = patch_size // 2
-    data_dir = '../datadefects/mixquality/'
-    save_dir = '../datadefects/mixquality-3cls-224'
-    binary = False
-    whole_mask_dir = '../datadefects/labels_whole'
-    slice(data_dir, save_dir, step_size, patch_size, binary, whole_mask_dir)
+    # # slice images/labels into small patches
+    # patch_size = 224
+    # step_size = patch_size // 2
+    # data_dir = '../datadefects/mixquality/'
+    # save_dir = '../datadefects/mixquality-3cls-224'
+    # binary = False
+    # whole_mask_dir = '../datadefects/labels_whole'
+    # slice(data_dir, save_dir, step_size, patch_size, binary, whole_mask_dir)

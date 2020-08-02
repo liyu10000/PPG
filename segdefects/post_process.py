@@ -39,6 +39,46 @@ def joint(patch_dir, save_dir):
         cv2.imwrite(save_name, mask)
         print('Finished jointing', basename)
 
+def joint2(patch_dir, save_dir):
+    """ Joint mask patches into big masks
+    Assume step_size = patch_size
+    @params
+        patch_dir: directory with patches of predicted masks
+        save_dir: directory to save big masks
+    """
+    # collect mask names associated with one image
+    file_dict = {}
+    files = os.listdir(patch_dir)
+    for f in files:
+        tokens = f[:-4].rsplit('_', 4)
+        basename = tokens[0]
+        H = int(tokens[1][1:])
+        W = int(tokens[2][1:])
+        h = int(tokens[3][1:])
+        w = int(tokens[4][1:])
+        if basename not in file_dict:
+            file_dict[basename] = {'H':H, 'W':W, 'patches':[]}
+        file_dict[basename]['patches'].append([h, w, f])
+    # put patches back into a big image
+    os.makedirs(save_dir, exist_ok=True)
+    for basename in file_dict:
+        save_name = os.path.join(save_dir, basename+'.png')
+        H, W = file_dict[basename]['H'], file_dict[basename]['W']
+        mask = np.zeros((H, W, 1))
+        pred_cnt = np.zeros((H, W, 1))
+        patches = file_dict[basename]['patches']
+        for h, w, f in patches:
+            patch_name = os.path.join(patch_dir, f)
+            patch = np.load(patch_name)
+            patch = patch.transpose((1, 2, 0))
+            ph, pw, _ = patch.shape
+            mask[h:h+ph, w:w+pw] += patch
+            pred_cnt[h:h+ph, w:w+pw] += 1
+        mask = np.nan_to_num(mask / pred_cnt, nan=0, posinf=0, neginf=0)
+        mask = ((mask > 0.5) * 255).astype(int)
+        cv2.imwrite(save_name, mask)
+        print('Finished jointing', basename)
+
 def _evaluate(true_mask, pred_mask, same_channel):
     """ Calculate the overall precision, recall, per channel recall,
     and per channel precision and iou if pred_mask has the equivalent channels.
@@ -141,6 +181,7 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument('--patch_dir', type=str, default='path/to/patches/for/joint')
     parser.add_argument('--joint_dir', type=str, default='path/to/dir/saving/joint/images')
+    parser.add_argument('--pred_type', type=str, default='png', choices=['png', 'npy'])
     parser.add_argument('--true_dir', type=str, default='path/to/true/images')
     parser.add_argument('--pred_dir', type=str, default='path/to/pred/images')
     parser.add_argument('--whole_dir', type=str, default='path/to/whole/images')
@@ -150,8 +191,12 @@ if __name__ == '__main__':
     # joint patches back to big images
     patch_dir = cfg.patch_dir
     joint_dir = cfg.joint_dir
+    pred_type = cfg.pred_type
     if not patch_dir.startswith('path'):
-        joint(patch_dir, joint_dir)
+        if pred_type == 'png':
+            joint(patch_dir, joint_dir)
+        elif pred_type == 'npy':
+            joint2(patch_dir, joint_dir)
 
     # calculate precision and recall
     true_dir = cfg.true_dir
