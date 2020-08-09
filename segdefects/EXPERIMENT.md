@@ -306,6 +306,7 @@
 3. Comparison1: weight 0.9 vs. 1.0 (bce_dice_nobg_w09 vs. bce_dice_nobg_w10).
    Comparison2: original data vs. original + HR-downsampled data (bce_dice_nobg_w10 vs. bce_dice_ds2_nobg_w10).
    Comparison3: original HR+SR data vs. original HR data vs. original HR+SR data without some supres (bce_dice_nobg_w10 vs. bce_dice_hr_nobg_w10 vs. bce_dice_rm_nobg_w10).
+4. Save proba predictions directly for patches and average probability at jointing.
 
  - Config
 1. Train for 90 epochs.
@@ -315,3 +316,4 @@
 1. Comparison 1: Weight 1.0 is better than 0.9. Stick with w1.0.
 2. Comparison 2: Training with downsampled data doesn't lead to better results. Don't use.
 3. Comparison 3: Training on HR+SR > on HR+SR without some SR >> HR only, in terms of HR+SR combined test and also HR/SR separately.
+4. Saving proba and averaging at jointing yields more smooth segments. Lead to better performance for HR, but worse performance for SR. I guess the reason of degradation on SR is averaging makes less predictions.

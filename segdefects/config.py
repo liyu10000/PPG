@@ -32,6 +32,8 @@ class Config:
         self._parser.add_argument('--resume_from', type=int, default=0, help='number of epochs to start counting')
         self._parser.add_argument('--names_file', type=str, default='', help='csv file containing names list')
         # self._parser.add_argument('--f1', type=float, default=0.2, help='F1 cretiria to choose training samples')
+        self._parser.add_argument('--takefirst', type=int, default=-1, help='number of names for training')
+        self._parser.add_argument('--onlySR', type=str, default='no', choices=['yes', 'no'])
 
         ### Testing configuration.
         self._parser.add_argument('--test_batch_size', type=int, default=64, help='batch size for testing')

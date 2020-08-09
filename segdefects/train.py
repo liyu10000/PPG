@@ -34,9 +34,14 @@ class Trainer(object):
     '''This class takes care of training and validation of our model'''
     def __init__(self, model, cfg):
         df = pd.read_csv(cfg.names_file)
-        # df = df[(df.test == 0) & (df.remove == 0)]
-        df = df[df.test == 0]
+        if cfg.onlySR == 'yes':
+            df = df[(df.test == 0) & (df.resolution == 'SR')]
+        else:
+            df = df[df.test == 0]
         names = df.name.to_list()
+        if cfg.takefirst != -1:
+            random.Random(seed).shuffle(names)
+            names = names[:cfg.takefirst]
         print(len(names), names)
         self.classes = cfg.classes
         self.image_dir = cfg.image_dir
