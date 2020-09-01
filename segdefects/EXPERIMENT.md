@@ -306,6 +306,7 @@
 3. Comparison1: weight 0.9 vs. 1.0 (bce_dice_nobg_w09 vs. bce_dice_nobg_w10).
    Comparison2: original data vs. original + HR-downsampled data (bce_dice_nobg_w10 vs. bce_dice_ds2_nobg_w10).
    Comparison3: original HR+SR data vs. original HR data vs. original HR+SR data without some supres (bce_dice_nobg_w10 vs. bce_dice_hr_nobg_w10 vs. bce_dice_rm_nobg_w10).
+   Comparison4: amount of HR+SR data vs. performance.
 4. Save proba predictions directly for patches and average probability at jointing.
 
  - Config
@@ -316,4 +317,35 @@
 1. Comparison 1: Weight 1.0 is better than 0.9. Stick with w1.0.
 2. Comparison 2: Training with downsampled data doesn't lead to better results. Don't use.
 3. Comparison 3: Training on HR+SR > on HR+SR without some SR >> HR only, in terms of HR+SR combined test and also HR/SR separately.
+4. Comparison 4: The more HR+SR data, the better the f1 on HR test set. Effect not as clear on SR test set. Will train on SR separately in next experiment.
 4. Saving proba and averaging at jointing yields more smooth segments. Lead to better performance for HR, but worse performance for SR. I guess the reason of degradation on SR is averaging makes less predictions.
+
+
+### Exp23 (08/12/2020)
+ - Idea
+0. Got 7th set of data.
+1. Select gold test set: 10 from HR and 10 from SR. Retrain whole ship segmentation and defect segmentation.
+2. At jointing patch predictions, change threshold from 0.5 to 0.3 & 0.4.
+3. Comparison: amount of SR data vs. performance.
+4. Augment delamination (G) and corrosion (R) for SR.
+
+ - Config
+1. Train for 90 epochs.
+2. Use batch size 128, patch size 224, backbone resnet34, defect-only data.
+3. Use augmented SR data. (named hrsr_nobg2_w10)
+
+ - Result
+1. As expected, lowering the threshold will increase recall, with slight decrease of precision.
+2. Additional augment on GR of SR doesn't seem to make a difference, probably because of the limited number of new training data comparing to overwhelmingly large HR training data.
+
+
+### Exp24 (08/26/2020)
+ - Idea
+1. Randomly select test set (three shuffles): 30 from HR and 30 from SR. Retrain defect segmentation.
+
+ - Config
+1. Train for 90 epochs.
+2. Use batch size 128, patch size 224, backbone resnet34, defect-only data.
+
+ - Result
+1. Different shuffles can lead to different results. 2nd shuffle works best.

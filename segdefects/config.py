@@ -31,7 +31,7 @@ class Config:
         self._parser.add_argument('--resume', type=str, default='False', choices=['True', 'False'])
         self._parser.add_argument('--resume_from', type=int, default=0, help='number of epochs to start counting')
         self._parser.add_argument('--names_file', type=str, default='', help='csv file containing names list')
-        # self._parser.add_argument('--f1', type=float, default=0.2, help='F1 cretiria to choose training samples')
+        self._parser.add_argument('--testkey', type=str, default='test', help='the name of test column in names file')
         self._parser.add_argument('--takefirst', type=int, default=-1, help='number of names for training')
         self._parser.add_argument('--onlySR', type=str, default='no', choices=['yes', 'no'])
 

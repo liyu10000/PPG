@@ -134,4 +134,14 @@
 1. Total number of images is 522. Use the same test (52 images) as in defect segmentation.
 2. Train 90 epochs, save every 30 epochs.
 
- - Result
+
+### Exp10 (08/12/2020)
+ - Idea
+1. Whole ship segmentation. 
+2. Use all seven sets of data. Do not do jpeg augmentation.
+3. Also train with separate test set (goldtest), use seg results (image 56 and 57) from it.
+
+ - Config
+1. Total number of images is 597. Use the same test (20 images) as in defect segmentation.
+2. Train 90 epochs, save every 30 epochs.
+3. 90 epochs are good.

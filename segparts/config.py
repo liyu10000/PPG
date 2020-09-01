@@ -36,15 +36,16 @@ class Config:
         ### Finetune on isPart classification
         self._parser.add_argument('--is_part_csv', type=str, default='path/to/is_part_csv')
 
-        ## test on train
-        self._parser.add_argument('--test_image_dir', action='append', default=['path/to/images'])
-        self._parser.add_argument('--test_label_dir', action='append', default=['path/to/labels'])
-        self._parser.add_argument('--pred_mask_dir', type=str, default='path/to/pred_masks')
+        # ## test on train
+        # self._parser.add_argument('--test_image_dir', action='append', default=['path/to/images'])
+        # self._parser.add_argument('--test_label_dir', action='append', default=['path/to/labels'])
+        # self._parser.add_argument('--pred_mask_dir', type=str, default='path/to/pred_masks')
         
-        ## test on separate testset (images/labels)
-        # self._parser.add_argument('--test_image_dir', type=str, default='../dataparts/Segmentation_Test_Set/images')
-        # self._parser.add_argument('--test_label_dir', type=str, default='../dataparts/Segmentation_Test_Set/labels')
-        # self._parser.add_argument('--pred_mask_dir', type=str, default='../dataparts/Segmentation_Test_Set/pred_masks')
+        # test on separate testset (images/labels)
+        self._parser.add_argument('--test_image_dir', type=str, default='../dataparts/Segmentation_Test_Set/images')
+        self._parser.add_argument('--test_label_dir', type=str, default='../dataparts/Segmentation_Test_Set/labels')
+        self._parser.add_argument('--pred_mask_dir', type=str, default='../dataparts/Segmentation_Test_Set/pred_masks')
+        self._parser.add_argument('--plot_mask_dir', type=str, default='../dataparts/Segmentation_Test_Set/plot_masks')
     
 
     def parse(self):

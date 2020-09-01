@@ -90,14 +90,18 @@ def _evaluate(true_mask, pred_mask, same_channel):
     # same_channel = (len(true_mask.shape) == len(pred_mask.shape))
     # calculate overall precision and recall
     intersect = np.where(true_mask&pred_mask, 1, 0)
+    union = np.where(true_mask|pred_mask, 1, 0)
     true_mask_b = np.sum(true_mask, axis=2)
     pred_mask_b = np.sum(pred_mask, axis=2)
     intersect_b = np.sum(intersect, axis=2)
+    union_b = np.sum(union, axis=2)
     
     try:
+        iou = np.count_nonzero(intersect_b) / np.count_nonzero(union_b)
         precision = np.count_nonzero(intersect_b) / np.count_nonzero(pred_mask_b)
         recall = np.count_nonzero(intersect_b) / np.count_nonzero(true_mask_b)
     except:
+        iou = 1.0
         precision = 1.0
         recall = 1.0
     # calculate per channel recall
@@ -121,15 +125,14 @@ def _evaluate(true_mask, pred_mask, same_channel):
             ch_precisions.append(p)
             iou = np.count_nonzero(intersect[:,:,i]) / np.count_nonzero(union[:,:,i])
             ch_ious.append(iou)
-    return precision, recall, ch_recalls, ch_precisions, ch_ious
+    return iou, precision, recall, ch_recalls, ch_precisions, ch_ious
 
-def evaluate(true_dir, pred_dir, same_channel=False, whole_dir=None, defect_ratio=None):
+def evaluate(true_dir, pred_dir, same_channel=False, whole_dir=None):
     true_masks = os.listdir(true_dir)
     pred_masks = os.listdir(pred_dir)
     print('# true files in {}:{}\n# pred files in {}:{}'.format(true_dir, len(true_masks), pred_dir, len(pred_masks)))
-    true_masks.sort()
     pred_masks.sort()
-    precision, recall = [], []
+    IoU, precision, recall = [], [], []
     ch_recalls, ch_precisions = [], []
     ch_ious = []
     for name in pred_masks:
@@ -137,38 +140,30 @@ def evaluate(true_dir, pred_dir, same_channel=False, whole_dir=None, defect_rati
             continue
         t = cv2.imread(os.path.join(true_dir, name))
         p = cv2.imread(os.path.join(pred_dir, name))
-        if whole_dir is not None:
+        if whole_dir is not None: # calculate ratio of defects over ship surface
             w = cv2.imread(os.path.join(whole_dir, name))
-            t_bin = np.sum(t, axis=2) > 0
-            w_bin = np.sum(w, axis=2) > 0
-            ratio = np.sum(t_bin) / np.sum(w_bin)
-            if ratio < defect_ratio:
-                # if ratio of defects over ship segmentation is small, flip defects with background
-                print(name, 'swap df with bg:', ratio)
-                ones = t == 255
-                zeros = t == 0
-                t[ones] = 0
-                t[zeros] = 255
-                ones = p == 255
-                zeros = p == 0
-                p[ones] = 0
-                p[zeros] = 255
-                zeros = w == 0
-                t[zeros] = 0
-                p[zeros] = 0
-                # cv2.imwrite(name+'.true.jpg', t)
-                # cv2.imwrite(name+'.pred.jpg', p)
-        pr, rc, ch_rcs, ch_prs, ious = _evaluate(t, p, same_channel)
-        print('{} {:.4f} {:.4f} {:.4f}'.format(name, pr, rc, 2*pr*rc/(pr+rc+0.01)))
+            t_b = (np.sum(t, axis=2) > 0).astype(np.uint8)
+            p_b = (np.sum(p, axis=2) > 0).astype(np.uint8)
+            w_b = (np.sum(w, axis=2) > 0).astype(np.uint8)
+            t_b_in_w = np.where(w_b == 1, t_b, 0)
+            p_b_in_w = np.where(w_b == 1, p_b, 0)
+            t_ratio = np.sum(t_b_in_w) / np.sum(w_b)
+            p_ratio = np.sum(p_b_in_w) / np.sum(w_b)
+            print('name+tpratio {} {:.4f} {:.4f}'.format(name, t_ratio, p_ratio))
+        iou, pr, rc, ch_rcs, ch_prs, ious = _evaluate(t, p, same_channel)
+        print('name+recall {} {:.4f} {:.4f} {:.4f}'.format(name, *ch_rcs))
+        print('name+p+r+f1 {} {:.4f} {:.4f} {:.4f} {:.4f}'.format(name, iou, pr, rc, 2*pr*rc/(pr+rc+0.01)))
+        IoU.append(iou)
         precision.append(pr)
         recall.append(rc)
         ch_recalls.append(ch_rcs)
         ch_precisions.append(ch_prs)
         ch_ious.append(ious)
+    IoU = np.mean(IoU)
     precision = np.mean(precision)
     recall = np.mean(recall)
     ch_recalls = np.mean(ch_recalls, axis=0)
-    print('precision: {:.4f}, recall: {:.4f}'.format(precision, recall))
+    print('iou: {:.4f}, precision: {:.4f}, recall: {:.4f}'.format(IoU, precision, recall))
     for r in ch_recalls:
         print('channel recall: {:.4f}'.format(r))
     if same_channel:
@@ -185,7 +180,6 @@ if __name__ == '__main__':
     parser.add_argument('--true_dir', type=str, default='path/to/true/images')
     parser.add_argument('--pred_dir', type=str, default='path/to/pred/images')
     parser.add_argument('--whole_dir', type=str, default='path/to/whole/images')
-    parser.add_argument('--defect_ratio', type=float, default=0.1)
     cfg = parser.parse_args()
 
     # joint patches back to big images
@@ -204,8 +198,7 @@ if __name__ == '__main__':
     same_channel = False
     if not true_dir.startswith('path'):
         whole_dir = cfg.whole_dir
-        defect_ratio = cfg.defect_ratio
         if whole_dir.startswith('path'):
             evaluate(true_dir, pred_dir, same_channel)
         else:
-            evaluate(true_dir, pred_dir, same_channel, whole_dir, defect_ratio)
+            evaluate(true_dir, pred_dir, same_channel, whole_dir)

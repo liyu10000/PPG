@@ -69,12 +69,12 @@ class Tester(object):
 
     def save(self, names, probs):
         for name, prob in zip(names, probs):
-            # np.save(os.path.join(self.pred_mask_dir, name+'.npy'), prob)
-            pred_mask = prob > 0.5  # convert to binary mask
-            pred_mask = pred_mask.astype(np.uint8)
-            pred_mask = pred_mask * 255
-            pred_mask = pred_mask.transpose((1, 2, 0))
-            cv2.imwrite(os.path.join(self.pred_mask_dir, name+'.png'), pred_mask)
+            np.save(os.path.join(self.pred_mask_dir, name+'.npy'), prob)
+            # pred_mask = prob > 0.5  # convert to binary mask
+            # pred_mask = pred_mask.astype(np.uint8)
+            # pred_mask = pred_mask * 255
+            # pred_mask = pred_mask.transpose((1, 2, 0))
+            # cv2.imwrite(os.path.join(self.pred_mask_dir, name+'.png'), pred_mask)
 
     def start(self):
         with torch.no_grad():

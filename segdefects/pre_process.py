@@ -103,14 +103,14 @@ def slice(data_dir, save_dir, step_size, patch_size, binary=True, whole_mask_dir
         binary: whether or not to save masks as binary or RGB
         whole_mask_dir: directory with whole vessel segmentation masks
     """
-    image_dir = os.path.join(data_dir, 'images6')
-    label_dir = os.path.join(data_dir, 'labels6')
-    image_dir2 = os.path.join(save_dir, 'images-bg6')
-    label_dir2 = os.path.join(save_dir, 'labels-bg6')
+    image_dir = os.path.join(data_dir, 'images')
+    label_dir = os.path.join(data_dir, 'labels_whole')
+    image_dir2 = os.path.join(save_dir, 'images-aug')
+    label_dir2 = os.path.join(save_dir, 'labels-aug')
     os.makedirs(image_dir2, exist_ok=True)
     os.makedirs(label_dir2, exist_ok=True)
     files = os.listdir(image_dir)
-    assert len(files) == len(os.listdir(label_dir))
+    # assert len(files) == len(os.listdir(label_dir))
     for f in files:
         basename = os.path.splitext(f)[0]
         # if not basename.startswith('ship'):
@@ -137,26 +137,26 @@ def slice(data_dir, save_dir, step_size, patch_size, binary=True, whole_mask_dir
                 # if np.all(mask_patch == 0):
                 #     continue
 
-                # keep those only with backgrounds
-                if np.any(mask_patch > 0):
-                    continue
-
-                # # data augmentation
+                # # keep those only with backgrounds
                 # if np.any(mask_patch > 0):
-                #     # randomly shift cut positions
-                #     h += random.randint(-step_size, step_size)
-                #     w += random.randint(-step_size, step_size)
-                #     # ensure patch is available
-                #     h = max(0, min(H - patch_size, h))
-                #     w = max(0, min(W - patch_size, w))
-                #     # recut patch
-                #     img_patch = img[h:h+patch_size, w:w+patch_size]
-                #     mask_patch = mask[h:h+patch_size, w:w+patch_size]
-                #     # if new patch does not include any defects, skip
-                #     if np.all(mask_patch == 0):
-                #         continue
-                # else:
                 #     continue
+
+                # data augmentation
+                if np.any(mask_patch > 0):
+                    # randomly shift cut positions
+                    h += random.randint(-step_size, step_size)
+                    w += random.randint(-step_size, step_size)
+                    # ensure patch is available
+                    h = max(0, min(H - patch_size, h))
+                    w = max(0, min(W - patch_size, w))
+                    # recut patch
+                    img_patch = img[h:h+patch_size, w:w+patch_size]
+                    mask_patch = mask[h:h+patch_size, w:w+patch_size]
+                    # if new patch does not include any defects, skip
+                    if np.all(mask_patch == 0):
+                        continue
+                else:
+                    continue
 
                 # check if patch is within whole vessel mask
                 if whole_mask_dir is not None:
@@ -172,20 +172,20 @@ def slice(data_dir, save_dir, step_size, patch_size, binary=True, whole_mask_dir
 
 
 if __name__ == '__main__':
-    # read csv files and generate masks
-    data_dir = '../datadefects/raw/mixquality'
-    file_dict = parse_dir(data_dir)
-    save_dir = '../datadefects/mixquality-640-480/labels'
-    wh = (640, 480)
-    for f in file_dict:
-        print('Processing', f)
-        show_labels(f, file_dict, save_dir, wh)
+    # # read csv files and generate masks
+    # data_dir = '../datadefects/raw/mixquality'
+    # file_dict = parse_dir(data_dir)
+    # save_dir = '../datadefects/mixquality-640-480/labels'
+    # wh = (640, 480)
+    # for f in file_dict:
+    #     print('Processing', f)
+    #     show_labels(f, file_dict, save_dir, wh)
 
-    # # slice images/labels into small patches
-    # patch_size = 224
-    # step_size = patch_size // 2
-    # data_dir = '../datadefects/mixquality/'
-    # save_dir = '../datadefects/mixquality-3cls-224'
-    # binary = False
-    # whole_mask_dir = '../datadefects/labels_whole'
-    # slice(data_dir, save_dir, step_size, patch_size, binary, whole_mask_dir)
+    # slice images/labels into small patches
+    patch_size = 224
+    step_size = patch_size // 2
+    data_dir = '../datadefects/goldtest/'
+    save_dir = '../datadefects/goldtest-3cls-224'
+    binary = False
+    whole_mask_dir = '../datadefects/goldtest/labels_whole'
+    slice(data_dir, save_dir, step_size, patch_size, binary, whole_mask_dir)
