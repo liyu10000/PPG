@@ -34,7 +34,7 @@ class Trainer(object):
     '''This class takes care of training and validation of our model'''
     def __init__(self, model, cfg):
         df = pd.read_csv(cfg.names_file)
-        df = df[df[cfg.testkey] != -1]
+        df = df[df[cfg.testkey] == 1]
         if cfg.onlySR == 'yes':
             df = df[df.resolution == 'SR']
         names = df.name.to_list()

@@ -304,16 +304,19 @@ if __name__ == '__main__':
     cfg = Config().parse()
 
     classes = cfg.classes
-    image_dir = cfg.test_image_dir
-    label_dir = cfg.test_label_dir if cfg.test_label_dir != 'None' else None
-    pred_mask_dir = cfg.pred_mask_dir
+    image_dir = cfg.test_image_dir[1]
+    label_dir = cfg.test_label_dir[1]
     whole_mask_dir = cfg.whole_mask_dir[1]
-    save_dir = cfg.plot_mask_dir
-    os.makedirs(save_dir, exist_ok=True)
+    pred_npy_dir = cfg.pred_npy_dir
+    pred_img_dir = cfg.pred_img_dir
+    os.makedirs(pred_img_dir, exist_ok=True)
+    orisize_mask_dir = cfg.orisize_mask_dir
+    orisize_save_dir = cfg.orisize_save_dir
+    os.makedirs(orisize_save_dir, exist_ok=True)
     # name = 'V3 13HR'
 
     # collect names with test result
-    names = [os.path.splitext(f)[0] for f in os.listdir(pred_mask_dir) 
+    names = [os.path.splitext(f)[0] for f in os.listdir(pred_npy_dir) 
                                         if f.endswith('.npy')]
 
     for name in names:
@@ -323,7 +326,7 @@ if __name__ == '__main__':
         whole_mask = cv2.imread(os.path.join(whole_mask_dir, name+'.png'), cv2.IMREAD_UNCHANGED)
         # print(img.shape, mask.shape)
 
-        pred_mask = np.load(os.path.join(pred_mask_dir, name+'.npy'))
+        pred_mask = np.load(os.path.join(pred_npy_dir, name+'.npy'))
         pred_mask = pred_mask > 0.5  # convert to binary mask
         pred_mask = pred_mask.astype(np.uint8)
         if classes == 6:
@@ -331,24 +334,31 @@ if __name__ == '__main__':
         # print(pred_mask.shape)
 
         # # save img and mask
-        # cv2.imwrite(os.path.join(save_dir, name+'.jpg'), img)
+        # cv2.imwrite(os.path.join(pred_img_dir, name+'.jpg'), img)
         # if label_dir is not None:
-        #     plot_mask(mask, os.path.join(save_dir, name+'_true.jpg'))
-        # plot_mask(pred_mask, os.path.join(save_dir, name+'_pred.jpg'))
+        #     plot_mask(mask, os.path.join(pred_img_dir, name+'_true.jpg'))
+        # plot_mask(pred_mask, os.path.join(pred_img_dir, name+'_pred.jpg'))
 
         # put mask on img
         # img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
         if label_dir is not None:
             mask = get_3channelmask(mask)
-            plot_mask_on_img(img, mask, os.path.join(save_dir, name+'_true.jpg'))
+            plot_mask_on_img(img, mask, os.path.join(pred_img_dir, name+'_true.jpg'))
         pred_mask = get_3channelmask(pred_mask)
         pred_mask = process_mask(pred_mask)
-        plot_mask_on_img(img, pred_mask, os.path.join(save_dir, name+'_pred.jpg'))
+        plot_mask_on_img(img, pred_mask, os.path.join(pred_img_dir, name+'_pred.jpg'))
         # pred_mask = cv2.cvtColor(pred_mask, cv2.COLOR_RGB2BGR)
+        # remove predictions outside of whole ship seg
         pred_mask[:, :, 0] = np.where(whole_mask > 0, pred_mask[:, :, 0], 0)
         pred_mask[:, :, 1] = np.where(whole_mask > 0, pred_mask[:, :, 1], 0)
         pred_mask[:, :, 2] = np.where(whole_mask > 0, pred_mask[:, :, 2], 0)
-        cv2.imwrite(os.path.join(save_dir, name+'_pred_mask.jpg'), pred_mask)
+        cv2.imwrite(os.path.join(pred_img_dir, name+'_pred_mask.jpg'), pred_mask)
+
+        # read raw image to get original image size
+        ori_mask = cv2.imread(os.path.join(orisize_mask_dir, name+'.png'))
+        H, W, _ = ori_mask.shape
+        pred_mask = cv2.resize(pred_mask, (W, H))
+        cv2.imwrite(os.path.join(orisize_save_dir, name+'.png'), pred_mask)
 
         # break
 
@@ -363,12 +373,12 @@ if __name__ == '__main__':
     # cfg = Config().parse()
 
     # classes = cfg.classes
-    # pred_mask_dir = cfg.pred_mask_dir
+    # pred_npy_dir = cfg.pred_npy_dir
     # whole_mask_dir = cfg.whole_mask_dir[1]
-    # print(pred_mask_dir, whole_mask_dir)
-    # names = os.listdir(pred_mask_dir)
+    # print(pred_npy_dir, whole_mask_dir)
+    # names = os.listdir(pred_npy_dir)
     # for name in names:
-    #     pred_mask_f = os.path.join(pred_mask_dir, name)
+    #     pred_mask_f = os.path.join(pred_npy_dir, name)
     #     whole_mask_f = os.path.join(whole_mask_dir, name)
     #     pred_mask = cv2.imread(pred_mask_f)
     #     whole_mask = cv2.imread(whole_mask_f, cv2.IMREAD_UNCHANGED)

@@ -42,11 +42,13 @@ class Config:
         # self._parser.add_argument('--pred_mask_dir', type=str, default='path/to/pred_masks')
         
         # test on separate testset (images/labels)
-        self._parser.add_argument('--test_image_dir', type=str, default='../dataparts/Segmentation_Test_Set/images')
-        self._parser.add_argument('--test_label_dir', type=str, default='../dataparts/Segmentation_Test_Set/labels')
-        self._parser.add_argument('--pred_mask_dir', type=str, default='../dataparts/Segmentation_Test_Set/pred_masks')
-        self._parser.add_argument('--plot_mask_dir', type=str, default='../dataparts/Segmentation_Test_Set/plot_masks')
-    
+        self._parser.add_argument('--test_image_dir', action='append', default=['path/to/test/images'])
+        self._parser.add_argument('--test_label_dir', action='append', default=['path/to/test/labels'])
+        self._parser.add_argument('--pred_npy_dir', type=str, default='path/to/pred/npy/dir')
+        self._parser.add_argument('--pred_img_dir', type=str, default='path/to/pred/img/dir')
+        self._parser.add_argument('--orisize_mask_dir', type=str, default='path/to/original/label/dir')
+        self._parser.add_argument('--orisize_save_dir', type=str, default='path/to/save/original/sized/pred/masks')
+
 
     def parse(self):
         cfg = self._parser.parse_args()

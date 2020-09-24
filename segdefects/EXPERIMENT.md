@@ -342,6 +342,7 @@
 ### Exp24 (08/26/2020)
  - Idea
 1. Randomly select test set (three shuffles): 30 from HR and 30 from SR. Retrain defect segmentation.
+2. Retrain defect segmentation on all labeled data.
 
  - Config
 1. Train for 90 epochs.
@@ -349,3 +350,17 @@
 
  - Result
 1. Different shuffles can lead to different results. 2nd shuffle works best.
+
+
+### Exp25 (09/08/2020)
+ - Idea
+0. Got 8th set of data. Of which 31 images are from gold test set.
+1. Train defect segmentation on all labeled data (A total of 667 images, of which 3 are unusable).
+2. To avoid info leaking, also train on pure labeled data (636 images, of which 3 are unusable, removing 31 in POC).
+
+ - Config
+1. Train for 90 epochs.
+2. Use batch size 128, patch size 224, backbone resnet34, defect-only data.
+
+ - Result
+1. As always, pick epoch-90 for testing.

@@ -28,9 +28,9 @@ class Tester(object):
         self.num_workers = cfg.num_workers
         self.batch_size = cfg.test_batch_size
         self.image_dir = cfg.test_image_dir
-        self.label_dir = cfg.test_label_dir if cfg.test_label_dir != 'None' else None
-        self.pred_mask_dir = cfg.pred_mask_dir
-        os.makedirs(self.pred_mask_dir, exist_ok=True)
+        self.label_dir = cfg.test_label_dir
+        self.pred_npy_dir = cfg.pred_npy_dir
+        os.makedirs(self.pred_npy_dir, exist_ok=True)
         self.device = torch.device('cuda:0')
         # torch.set_default_tensor_type("torch.cuda.FloatTensor")
         torch.backends.cudnn.benchmark = True
@@ -69,12 +69,12 @@ class Tester(object):
 
     def save(self, names, probs):
         for name, prob in zip(names, probs):
-            np.save(os.path.join(self.pred_mask_dir, name+'.npy'), prob)
+            np.save(os.path.join(self.pred_npy_dir, name+'.npy'), prob)
             # pred_mask = prob > 0.5  # convert to binary mask
             # pred_mask = pred_mask.astype(np.uint8)
             # pred_mask = pred_mask * 255
             # pred_mask = pred_mask.transpose((1, 2, 0))
-            # cv2.imwrite(os.path.join(self.pred_mask_dir, name+'.png'), pred_mask)
+            # cv2.imwrite(os.path.join(self.pred_img_dir, name+'.png'), pred_mask)
 
     def start(self):
         with torch.no_grad():
