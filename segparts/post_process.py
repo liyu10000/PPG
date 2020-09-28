@@ -348,25 +348,19 @@ if __name__ == '__main__':
         pred_mask = process_mask(pred_mask)
         plot_mask_on_img(img, pred_mask, os.path.join(pred_img_dir, name+'_pred.jpg'))
         # pred_mask = cv2.cvtColor(pred_mask, cv2.COLOR_RGB2BGR)
-        # remove predictions outside of whole ship seg
-        pred_mask[:, :, 0] = np.where(whole_mask > 0, pred_mask[:, :, 0], 0)
-        pred_mask[:, :, 1] = np.where(whole_mask > 0, pred_mask[:, :, 1], 0)
-        pred_mask[:, :, 2] = np.where(whole_mask > 0, pred_mask[:, :, 2], 0)
+        # # remove predictions outside of whole ship seg
+        # pred_mask[:, :, 0] = np.where(whole_mask > 0, pred_mask[:, :, 0], 0)
+        # pred_mask[:, :, 1] = np.where(whole_mask > 0, pred_mask[:, :, 1], 0)
+        # pred_mask[:, :, 2] = np.where(whole_mask > 0, pred_mask[:, :, 2], 0)
         cv2.imwrite(os.path.join(pred_img_dir, name+'_pred_mask.jpg'), pred_mask)
 
-        # read raw image to get original image size
-        ori_mask = cv2.imread(os.path.join(orisize_mask_dir, name+'.png'))
-        H, W, _ = ori_mask.shape
-        pred_mask = cv2.resize(pred_mask, (W, H))
-        cv2.imwrite(os.path.join(orisize_save_dir, name+'.png'), pred_mask)
+        # # read raw image to get original image size
+        # ori_mask = cv2.imread(os.path.join(orisize_mask_dir, name+'.png'))
+        # H, W, _ = ori_mask.shape
+        # pred_mask = cv2.resize(pred_mask, (W, H))
+        # cv2.imwrite(os.path.join(orisize_save_dir, name+'.png'), pred_mask)
 
         # break
-
-        # img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
-        # plt.imshow(img)
-        # plt.xticks([])
-        # plt.yticks([])
-        # plt.show()
 
 
     # # remove predictions outside of whole ship seg

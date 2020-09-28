@@ -11,6 +11,7 @@ class Config:
         ### Common configuration.
         self._parser.add_argument('--seed', type=int, default=42, help='set the random seed for random, np, and torch')
         self._parser.add_argument('--gpu', type=int, default=0, help='choose id of gpu to use')
+        self._parser.add_argument('--backbone', type=str, default='xception', choices=['xception', 'resnet18', 'resnet34', 'resnet50'])
         self._parser.add_argument('--classes', type=int, default=3, choices=[6, 3, 1], help='number of classes')
         self._parser.add_argument('--whole_mask_dir', action='append', default=['path/to/whole/mask/'])
         self._parser.add_argument('--model_path', type=str, default='./model.pth')

@@ -92,7 +92,7 @@ if __name__ == '__main__':
     #     activation=None,           # activation function, default is None, can choose 'sigmoid'
     #     classes=4,                 # define number of output labels
     # )
-    model = smp.Unet("xception", 
+    model = smp.Unet(cfg.backbone, 
                      in_channels=4 if len(cfg.whole_mask_dir)>1 else 3, 
                      classes=cfg.classes, 
                      encoder_weights=None, 
