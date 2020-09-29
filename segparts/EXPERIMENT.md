@@ -145,3 +145,57 @@
 1. Total number of images is 597. Use the same test (20 images) as in defect segmentation.
 2. Train 90 epochs, save every 30 epochs.
 3. 90 epochs are good.
+
+
+### Exp11 (07/12/2020)
+ - Idea
+0. HorizonNet first run.
+1. Run given scripts on given dataset to make sure scripts are runnable.
+
+ - Config
+1. Resnet50 + RNN
+
+
+### Exp12 (09/21/2020)
+ - Idea
+0. HorizonNet.
+1. Train and predict part boundaries using HorizonNet.
+2. Only use foreground ships. Create by applying whole ship masks.
+3. Hard augmentation: rgb channel flip and left-right flip.
+
+ - Config
+1. 90 cropped and resized images with two boundaries (TS/BT, BT/VS).
+2. Images are shaped 640x480 and labels are two 1d vectors (2x640).
+3. Resnet34. 90 epochs.
+4. Train under three configurations: without mask, with mask on original boundaries, with mask on extended boundaries.
+
+ - Result
+1. There is no significant difference between the three configs.
+
+
+### Exp13 (09/27/2020)
+ - Idea
+0. HorizonNet.
+1. More active augmentation: random rotate and random shift.
+
+ - Config
+1. 90 + 360 (rs aug) + 450 (c aug).
+2. Resnet34, and Resnet34+RNN. 90 epochs.
+3. Two configs: without mask, with mask on original boundaries.
+
+ - Result
+1. Seg results are much better than that in *Exp2*.
+2. Train with RNN will smooth the output. The performance however are not really improved.
+3. Results are better than segmentation results from UNet, on POC data.
+
+
+### Exp14 (09/28/2020)
+ - Idea
+1. Part segmentation with aggressive data augmentation. Serves as baseline to HorizonNet.
+2. Crop ship from images. Zero out backgrounds.
+3. Use active data augmentation such as random rotate, random shift, and RGB channel flip.
+
+ - Config
+1. Total number of training images goes to 104 * 5 * 2 = 1040.
+2. Train/val batch size 16. Epochs 90.
+3. Results are no better than *Exp3*. Strange.
