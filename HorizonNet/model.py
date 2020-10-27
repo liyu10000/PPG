@@ -15,14 +15,30 @@ ENCODER_DENSENET = [
     'densenet121', 'densenet169', 'densenet161', 'densenet201'
 ]
 
+# import os
+# import cv2
+# import random
+# tmp_dir = './tmp'
+# os.makedirs(tmp_dir, exist_ok=True)
 
 def lr_pad(x, padding=1):
-    ''' Pad left/right-most to each other instead of zero padding '''
-    return torch.cat([x[..., -padding:], x, x[..., :padding]], dim=3)
+    ''' Pad left/right-most instead of zero padding '''
+    # print('before', x.shape)
+    # y = torch.cat([x[..., :padding], x, x[..., -padding:]], dim=3)
+    # if x.shape[3] == 640:
+    #     xx = x.detach().cpu().numpy()[0] * 255
+    #     xx = np.transpose(xx, (1, 2, 0))
+    #     yy = y.detach().cpu().numpy()[0] * 255
+    #     yy = np.transpose(yy, (1, 2, 0))
+    #     cnt = random.randint(1, 1000)
+    #     cv2.imwrite(os.path.join(tmp_dir, str(cnt)+'x.png'), xx.astype(np.uint8))
+    #     cv2.imwrite(os.path.join(tmp_dir, str(cnt)+'y.png'), yy.astype(np.uint8))
+    # print(' after', y.shape)
+    return torch.cat([x[..., :padding], x, x[..., -padding:]], dim=3)
 
 
 class LR_PAD(nn.Module):
-    ''' Pad left/right-most to each other instead of zero padding '''
+    ''' Pad left/right-most instead of zero padding '''
     def __init__(self, padding=1):
         super(LR_PAD, self).__init__()
         self.padding = padding
@@ -264,7 +280,7 @@ class HorizonNet(nn.Module):
             # print('output after permute', output.shape)
             output = output.contiguous().view(output.shape[0], 2, -1)  # [b, 2, w*step_cols]
             # print('output contiguous view', output.shape)
-
+        
         return output # B x 2 x W
 
 

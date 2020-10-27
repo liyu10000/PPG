@@ -179,12 +179,12 @@
 1. More active augmentation: random rotate and random shift.
 
  - Config
-1. 90 + 360 (rs aug) + 450 (c aug).
+1. 90 + 351 (rs aug, should be 360, some are neglected) + 441 (c aug, should be 450).
 2. Resnet34, and Resnet34+RNN. 90 epochs.
 3. Two configs: without mask, with mask on original boundaries.
 
  - Result
-1. Seg results are much better than that in *Exp2*.
+1. Seg results are much better than that in *Exp12*.
 2. Train with RNN will smooth the output. The performance however are not really improved.
 3. Results are better than segmentation results from UNet, on POC data.
 
@@ -198,4 +198,25 @@
  - Config
 1. Total number of training images goes to 104 * 5 * 2 = 1040.
 2. Train/val batch size 16. Epochs 90.
-3. Results are no better than *Exp3*. Strange.
+
+ - Result
+1. Results are no better than *Exp13*.
+
+
+### Exp13 (10/25/2020)
+ - Idea
+0. Received a new batch of part seg data, with 15 images.
+1. HorizonNet.
+2. More active augmentation: random rotate and random shift.
+3. Corrected a bug in code: should pad left/right for the same side. Also tested no padding.
+
+ - Config
+0. Currently only consider images with two line segs.
+1. 90 + 351 (rs aug) + 441 (c aug). Plus 14 + 56 (rs aug) + 70 (c aug).
+2. Resnet34, and Resnet34+RNN. 90 epochs.
+3. One config: without mask.
+
+ - Result
+1. Under old padding scheme, adding new data leads to minor improvement.
+2. Without padding could improve segmentation a little bit. 
+3. Correct padding leads to further improvement.
