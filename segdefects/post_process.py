@@ -75,7 +75,7 @@ def joint2(patch_dir, save_dir):
             mask[h:h+ph, w:w+pw] += patch
             pred_cnt[h:h+ph, w:w+pw] += 1
         mask = np.nan_to_num(mask / pred_cnt, nan=0, posinf=0, neginf=0)
-        mask = ((mask > 0.1) * 255).astype(int)
+        mask = ((mask > 0.3) * 255).astype(int)
         cv2.imwrite(save_name, mask)
         print('Finished jointing', basename)
 

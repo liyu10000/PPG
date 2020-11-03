@@ -364,3 +364,18 @@
 
  - Result
 1. As always, pick epoch-90 for testing.
+
+
+### Exp26 (10/21/2020)
+ - Idea
+0. Got 9th set of data. Of which 55 images in gold test test are covered. Total number of images is now 726.
+1. To avoid info leaking, train on pure labeled data (671 images, of which 3 are unusable, removing 55 in POC).
+2. Also augment on HR images. (note originally only augment SR images)
+
+ - Config
+1. Train for 90 epochs.
+2. Use batch size 128, patch size 224, backbone resnet34, defect-only data.
+
+ - Result
+1. As always, pick epoch-90 for testing.
+
