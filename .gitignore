@@ -26,3 +26,6 @@ __pycache__/
 /finetunedefects
 /vpdet_tmm17
 /python
+/segdefect
+/segpart
+/segwhole
