@@ -155,7 +155,7 @@ class GlobalHeightConv(nn.Module):
 
         assert out_w % x.shape[3] == 0
         factor = out_w // x.shape[3]
-        x = torch.cat([x[..., -1:], x, x[..., :1]], 3)
+        x = torch.cat([x[..., :1], x, x[..., -1:]], 3)
         x = F.interpolate(x, size=(x.shape[2], out_w + 2 * factor), mode='bilinear', align_corners=False)
         x = x[..., factor:-factor]
         return x

@@ -203,7 +203,7 @@
 1. Results are no better than *Exp13*.
 
 
-### Exp13 (10/25/2020)
+### Exp15 (10/25/2020)
  - Idea
 0. Received a new batch of part seg data, with 15 images.
 1. HorizonNet.
@@ -220,3 +220,18 @@
 1. Under old padding scheme, adding new data leads to minor improvement.
 2. Without padding could improve segmentation a little bit. 
 3. Correct padding leads to further improvement.
+
+
+### Exp16 (11/29/2020)
+ - Idea
+0. Received a new batch of part seg data, with 216 images.
+1. HozizonNet, and also our proposed model (remove the last block).
+2. Same data aug as *exp15*. 
+3. Corrected one more padding bug.
+
+ - Config
+0. Only consider images with two line segs.
+1. New data overlaps with POC. Set aside those overlaps (15 images) as test data.
+
+ - Result
+1. With additional data, performance on both separate test set and POC set get improved.
