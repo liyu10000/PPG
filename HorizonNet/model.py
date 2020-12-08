@@ -15,27 +15,6 @@ ENCODER_DENSENET = [
     'densenet121', 'densenet169', 'densenet161', 'densenet201'
 ]
 
-# import os
-# import cv2
-# import random
-# tmp_dir = './tmp'
-# os.makedirs(tmp_dir, exist_ok=True)
-
-def lr_pad(x, padding=1):
-    ''' Pad left/right-most instead of zero padding '''
-    # print('before', x.shape)
-    # y = torch.cat([x[..., :padding], x, x[..., -padding:]], dim=3)
-    # if x.shape[3] == 640:
-    #     xx = x.detach().cpu().numpy()[0] * 255
-    #     xx = np.transpose(xx, (1, 2, 0))
-    #     yy = y.detach().cpu().numpy()[0] * 255
-    #     yy = np.transpose(yy, (1, 2, 0))
-    #     cnt = random.randint(1, 1000)
-    #     cv2.imwrite(os.path.join(tmp_dir, str(cnt)+'x.png'), xx.astype(np.uint8))
-    #     cv2.imwrite(os.path.join(tmp_dir, str(cnt)+'y.png'), yy.astype(np.uint8))
-    # print(' after', y.shape)
-    return torch.cat([x[..., :padding], x, x[..., -padding:]], dim=3)
-
 
 class LR_PAD(nn.Module):
     ''' Pad left/right-most instead of zero padding '''
@@ -44,7 +23,7 @@ class LR_PAD(nn.Module):
         self.padding = padding
 
     def forward(self, x):
-        return lr_pad(x, self.padding)
+        return torch.cat([x[..., :self.padding], x, x[..., -self.padding:]], dim=3)
 
 
 def wrap_lr_pad(net):
@@ -149,15 +128,25 @@ class GlobalHeightConv(nn.Module):
             ConvCompressH(in_c//2, in_c//4),
             ConvCompressH(in_c//4, out_c),
         )
+        self.fc = nn.Linear(1280//out_c, 160)
 
     def forward(self, x, out_w):
         x = self.layer(x)
-
         assert out_w % x.shape[3] == 0
-        factor = out_w // x.shape[3]
-        x = torch.cat([x[..., :1], x, x[..., -1:]], 3)
-        x = F.interpolate(x, size=(x.shape[2], out_w + 2 * factor), mode='bilinear', align_corners=False)
-        x = x[..., factor:-factor]
+        # print('before upsampling', x.shape)
+
+        # # Upsample by interpolation
+        # factor = out_w // x.shape[3]
+        # x = torch.cat([x[..., :1], x, x[..., -1:]], 3)
+        # x = F.interpolate(x, size=(x.shape[2], out_w + 2 * factor), mode='bilinear', align_corners=False)
+        # print('after interpolate', x.shape)
+        # x = x[..., factor:-factor]
+        # print('take middle', x.shape, 'with factor', factor)
+
+        # Upsample by FCs
+        x = self.fc(x)
+        # print('after fc', x.shape)
+        
         return x
 
 
@@ -181,6 +170,7 @@ class GlobalHeightStage(nn.Module):
             f(x, out_w).reshape(bs, -1, out_w)
             for f, x, out_c in zip(self.ghc_lst, conv_list, self.cs)
         ], dim=1)
+        print('concated feature', feature.shape)
         return feature
 
 
@@ -262,11 +252,15 @@ class HorizonNet(nn.Module):
 
         # rnn
         if self.use_rnn:
+            # print('feature before permute', feature.shape)
             feature = feature.permute(2, 0, 1)  # [w, b, c*h]
+            # print('feature after permute', feature.shape)
             output, hidden = self.bi_rnn(feature)  # [seq_len, b, num_directions * hidden_size]
             output = self.drop_out(output)
+            # print('output before linear', output.shape)
             output = self.linear(output)  # [seq_len, b, 2 * step_cols]
             output = output.view(output.shape[0], output.shape[1], 2, self.step_cols)  # [seq_len, b, 2, step_cols]
+            # print('output after linear', output.shape)
             output = output.permute(1, 2, 0, 3)  # [b, 2, seq_len, step_cols]
             output = output.contiguous().view(output.shape[0], 2, -1)  # [b, 2, seq_len*step_cols]
         else:
@@ -285,13 +279,13 @@ class HorizonNet(nn.Module):
 
 
 if __name__ == '__main__':
-    backbone = 'resnet50'
+    backbone = 'resnet34'
     dummy = torch.zeros(1, 3, 480, 640)
 
-    # net = Resnet(backbone, pretrained=True)
-    # out1, out2, out3, out4 = net(dummy)
-    # print(out1.shape, out2.shape, out3.shape, out4.shape)
+    net = Resnet(backbone, pretrained=True)
+    out1, out2, out3, out4 = net(dummy)
+    print(out1.shape, out2.shape, out3.shape, out4.shape)
 
-    net = HorizonNet(backbone, use_rnn=False)
-    output = net(dummy)
-    print(output.shape)
+    # net = HorizonNet(backbone, use_rnn=False)
+    # output = net(dummy)
+    # print(output.shape)

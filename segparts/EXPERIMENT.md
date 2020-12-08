@@ -225,7 +225,7 @@
 ### Exp16 (11/29/2020)
  - Idea
 0. Received a new batch of part seg data, with 216 images.
-1. HozizonNet, and also our proposed model (remove the last block).
+1. HozizonNet.
 2. Same data aug as *exp15*. 
 3. Corrected one more padding bug.
 
@@ -235,3 +235,16 @@
 
  - Result
 1. With additional data, performance on both separate test set and POC set get improved.
+2. Remove last block doesn't work.
+
+
+### Exp17 (11/30/2020)
+ - Idea
+1. Train our own model, by replace interpolation with fully connected layer.
+2. Same data as *Exp16*.
+
+ - Config
+1. Train for 180 epochs, with each 60 epochs switching train/val data.
+
+ - Result
+1. Training with more data improves result.
