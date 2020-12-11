@@ -16,6 +16,7 @@ class Config:
         self._parser.add_argument('--whole_mask_dir', action='append', default=['path/to/whole/mask/'])
         self._parser.add_argument('--model_path', type=str, default='./model.pth')
         self._parser.add_argument('--num_workers', type=int, default=4)
+        self._parser.add_argument('--names_file', type=str, default='', help='csv file containing names list')
         
         ### Training configuration.
         self._parser.add_argument('--loss', type=str, default='bce', choices=['bce', 'bce_dice', 'dice'])

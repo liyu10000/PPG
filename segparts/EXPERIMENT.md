@@ -248,3 +248,15 @@
 
  - Result
 1. Training with more data improves result.
+
+
+### Exp18 (12/10/2020)
+ - Idea
+1. Train UNet on combined data, without aug. Use as UNet baseline.
+2. Set aside 25 images randomly selected from set1 and set2 and use as test set. 
+3. The 10 separate test set will also be kept and tested. 
+
+ - Config
+1. Train for 90 epochs, with 30 epochs a round.
+
+ - Result

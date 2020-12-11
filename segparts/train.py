@@ -32,6 +32,10 @@ torch.backends.cudnn.benchmark = True
 class Trainer(object):
     '''This class takes care of training and validation of our model'''
     def __init__(self, model, cfg):
+        df = pd.read_csv(cfg.names_file)
+        df = df[df.train == 1]
+        names = df.name.to_list()
+        print(len(names), names)
         self.classes = cfg.classes
         self.whole_mask_dir = cfg.whole_mask_dir
         self.image_dir = cfg.image_dir
@@ -73,6 +77,7 @@ class Trainer(object):
         self.scheduler = ReduceLROnPlateau(self.optimizer, mode="min", patience=3, verbose=True)
         self.dataloaders = {
             phase: generator(
+                names=names,
                 image_dir=self.image_dir,
                 label_dir=self.label_dir,
                 whole_mask_dir=self.whole_mask_dir,

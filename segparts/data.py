@@ -101,6 +101,7 @@ class PPGDataset(Dataset):
 
 
 def generator(
+            names,
             image_dir,
             label_dir,
             whole_mask_dir,
@@ -110,9 +111,14 @@ def generator(
             batch_size=8,
             num_workers=4,
             ):
-    image_dir = image_dir[1:]
-    label_dir = label_dir[1:]
-    whole_mask_dir = whole_mask_dir[1:]
+    if isinstance(image_dir, list):
+        image_dir = image_dir[1:]
+        label_dir = label_dir[1:]
+        whole_mask_dir = whole_mask_dir[1:]
+    else:
+        image_dir = [image_dir]
+        label_dir = [label_dir]
+        whole_mask_dir = [whole_mask_dir]
     pairs = []
     if whole_mask_dir:
         for img_dir, lbl_dir, wmk_dir in zip(image_dir, label_dir, whole_mask_dir):
@@ -120,8 +126,26 @@ def generator(
             pairs += [(f[:-4], os.path.join(img_dir, f), os.path.join(lbl_dir, f), os.path.join(wmk_dir, f)) for f in keys]
     else:
         for img_dir, lbl_dir in zip(image_dir, label_dir):
-            keys = [f for f in os.listdir(img_dir) if f.endswith('.png')]
+            # keys = [f for f in os.listdir(img_dir) if f.endswith('.png')]
+            fs = [f for f in os.listdir(img_dir) if f.endswith('.png')]
+            keys = []
+            for f in fs:
+                if f.startswith('ship'):
+                    if len(f.split('_', 7)) == 7: # original data, no aug
+                        if f[:-4] in names:
+                            keys.append(f)
+                    else:
+                        if '_'.join(f.split('_', 7)[:7]) in names:
+                            keys.append(f)
+                else:
+                    if len(f.split('_', 1)) == 1: # original data, no aug
+                        if f[:-4] in names:
+                            keys.append(f)
+                    else:
+                        if f.split('_', 1)[0] in names:
+                            keys.append(f)
             pairs += [(f[:-4], os.path.join(img_dir, f), os.path.join(lbl_dir, f)) for f in keys]
+    # print(len(pairs), [p[0] for p in pairs])
     random.Random(seed).shuffle(pairs) # shuffle with seed, so that yielding same sampling
     if train_val_split:
         num, idx = train_val_split

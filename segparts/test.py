@@ -23,6 +23,10 @@ os.environ["CUDA_VISIBLE_DEVICES"] = str(cfg.gpu)
 class Tester(object):
     '''This class takes care of testing of our model'''
     def __init__(self, model, cfg):
+        df = pd.read_csv(cfg.names_file)
+        df = df[df.train == 0]
+        names = df.name.to_list()
+        print(len(names), names)
         self.classes = cfg.classes
         self.whole_mask_dir = cfg.whole_mask_dir
         self.num_workers = cfg.num_workers
@@ -48,6 +52,7 @@ class Tester(object):
         self.net.eval()
         # initiate data loader
         self.dataloader = generator(
+                                    names=names,
                                     image_dir=self.image_dir,
                                     label_dir=self.label_dir,
                                     whole_mask_dir=self.whole_mask_dir,
@@ -69,12 +74,12 @@ class Tester(object):
 
     def save(self, names, probs):
         for name, prob in zip(names, probs):
-            np.save(os.path.join(self.pred_npy_dir, name+'.npy'), prob)
-            # pred_mask = prob > 0.5  # convert to binary mask
-            # pred_mask = pred_mask.astype(np.uint8)
-            # pred_mask = pred_mask * 255
-            # pred_mask = pred_mask.transpose((1, 2, 0))
-            # cv2.imwrite(os.path.join(self.pred_img_dir, name+'.png'), pred_mask)
+            # np.save(os.path.join(self.pred_npy_dir, name+'.npy'), prob)
+            pred_mask = prob > 0.5  # convert to binary mask
+            pred_mask = pred_mask.astype(np.uint8)
+            pred_mask = pred_mask * 255
+            pred_mask = pred_mask.transpose((1, 2, 0))
+            cv2.imwrite(os.path.join(self.pred_img_dir, name+'.png'), pred_mask)
 
     def start(self):
         with torch.no_grad():
