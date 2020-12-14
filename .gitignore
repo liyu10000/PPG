@@ -17,6 +17,9 @@
 __pycache__/
 
 *.pth
+*.old
+*.new
+*.bk
 
 /dataparts
 /datadefects

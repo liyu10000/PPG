@@ -2,6 +2,7 @@ import os
 import cv2
 import argparse
 import numpy as np
+import pandas as pd
 from tqdm import trange
 from tensorboardX import SummaryWriter
 
@@ -29,6 +30,7 @@ if __name__ == '__main__':
                         help='path to load saved checkpoint. (testing)')
     parser.add_argument('--calc_loss', action='store_true', help='calculate test loss')
     # Dataset related arguments
+    parser.add_argument('--names_file', type=str, default='', help='csv file containing names list')
     parser.add_argument('--img_dirs', action='append', help='path/to/images')
     parser.add_argument('--txt_dirs', action='append', help='path/to/txts')
     parser.add_argument('--pred_dir', default='path/to/save/predictions')
@@ -50,7 +52,12 @@ if __name__ == '__main__':
     os.makedirs(args.pred_dir, exist_ok=True)
 
     # Create dataloader
-    loader_test = generator(args.img_dirs, 
+    df = pd.read_csv(args.names_file)
+    df = df[df.train == 0]
+    names = df.name.to_list()
+    print(len(names), names)
+    loader_test = generator(names,
+                            args.img_dirs, 
                             args.txt_dirs,
                             phase='test',
                             seed=args.seed,

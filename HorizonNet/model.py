@@ -170,7 +170,7 @@ class GlobalHeightStage(nn.Module):
             f(x, out_w).reshape(bs, -1, out_w)
             for f, x, out_c in zip(self.ghc_lst, conv_list, self.cs)
         ], dim=1)
-        print('concated feature', feature.shape)
+        # print('concated feature', feature.shape)
         return feature
 
 

@@ -34,7 +34,9 @@ class Tester(object):
         self.image_dir = cfg.test_image_dir
         self.label_dir = cfg.test_label_dir
         self.pred_npy_dir = cfg.pred_npy_dir
+        self.pred_img_dir = cfg.pred_img_dir
         os.makedirs(self.pred_npy_dir, exist_ok=True)
+        os.makedirs(self.pred_img_dir, exist_ok=True)
         self.device = torch.device('cuda:0')
         # torch.set_default_tensor_type("torch.cuda.FloatTensor")
         torch.backends.cudnn.benchmark = True

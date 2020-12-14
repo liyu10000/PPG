@@ -2,6 +2,7 @@ import os
 import time
 import argparse
 import numpy as np
+import pandas as pd
 from tqdm import trange
 from tensorboardX import SummaryWriter
 
@@ -51,6 +52,7 @@ if __name__ == '__main__':
     parser.add_argument('--no_rnn', action='store_true',
                         help='whether to remove rnn or not')
     # Dataset related arguments
+    parser.add_argument('--names_file', type=str, default='', help='csv file containing names list')
     parser.add_argument('--img_dirs', action='append', help='path/to/images')
     parser.add_argument('--txt_dirs', action='append', help='path/to/txts')
     parser.add_argument('--train_val_split', type=str, help='split/in/n,i')
@@ -96,7 +98,12 @@ if __name__ == '__main__':
     os.makedirs(os.path.join(args.ckpt, args.id), exist_ok=True)
 
     # Create dataloader
-    loader_train = generator(args.img_dirs, 
+    df = pd.read_csv(args.names_file)
+    df = df[df.train == 1]
+    names = df.name.to_list()
+    print(len(names), names)
+    loader_train = generator(names,
+                             args.img_dirs, 
                              args.txt_dirs,
                              phase='train',
                              seed=args.seed,
@@ -105,7 +112,8 @@ if __name__ == '__main__':
                              return_path=False,
                              batch_size=args.batch_size_train,
                              num_workers=args.num_workers)
-    loader_valid = generator(args.img_dirs, 
+    loader_valid = generator(names,
+                             args.img_dirs, 
                              args.txt_dirs,
                              phase='valid',
                              seed=args.seed,

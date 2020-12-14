@@ -60,7 +60,8 @@ class PPGPartDataset(Dataset):
         return out_lst
 
 
-def generator(img_dirs, 
+def generator(names,
+              img_dirs, 
               txt_dirs, 
               phase,
               seed=42,
@@ -70,16 +71,30 @@ def generator(img_dirs,
               batch_size=4,
               num_workers=4):
     img_txt_pairs = []
-    if return_bon:
-        for img_dir, txt_dir in zip(img_dirs, txt_dirs):
-            img_fnames = [f[:-4] for f in os.listdir(img_dir)]
-            img_fnames.sort()
-            img_txt_pairs += [(os.path.join(img_dir, f+'.png'), os.path.join(txt_dir, f+'.txt')) for f in img_fnames]
-    else:
-        for img_dir in img_dirs:
-            img_fnames = [f[:-4] for f in os.listdir(img_dir)]
-            img_fnames.sort()
-            img_txt_pairs += [(os.path.join(img_dir, f+'.png'), ) for f in img_fnames]
+    for i, img_dir in enumerate(img_dirs):
+        fs = [f[:-4] for f in os.listdir(img_dir) if f.endswith('.png')]
+        keys = []
+        for f in fs:
+            if f.startswith('ship'):
+                if len(f.split('_', 7)) == 7: # original data, no aug
+                    if f in names:
+                        keys.append(f)
+                else:
+                    if '_'.join(f.split('_', 7)[:7]) in names:
+                        keys.append(f)
+            else:
+                if len(f.split('_', 1)) == 1: # original data, no aug
+                    if f in names:
+                        keys.append(f)
+                else:
+                    if f.split('_', 1)[0] in names:
+                        keys.append(f)
+        keys.sort()
+        if return_bon:
+            txt_dir = txt_dirs[i]
+            img_txt_pairs += [(os.path.join(img_dir, f+'.png'), os.path.join(txt_dir, f+'.txt')) for f in keys]
+        else:
+            img_txt_pairs += [(os.path.join(img_dir, f+'.png'), ) for f in keys]
     random.Random(seed).shuffle(img_txt_pairs) # shuffle with seed, so that yielding same sampling
     if train_val_split:
         num, idx = train_val_split.split(',')

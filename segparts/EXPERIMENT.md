@@ -253,10 +253,13 @@
 ### Exp18 (12/10/2020)
  - Idea
 1. Train UNet on combined data, without aug. Use as UNet baseline.
-2. Set aside 25 images randomly selected from set1 and set2 and use as test set. 
-3. The 10 separate test set will also be kept and tested. 
+2. Train HorizonNet on combined data, without aug. Use as HorizonNet baseline. (Note in this exp the unmodified source code will be used.)
+3. Train proposed part-seg net. Three sets of exps: with only aug, with only range-aware loss, with two combined. (The first two exps serve as ablation studies.)
+4. Set aside 25 images randomly selected from set1 and set2 and use as test set. 
+5. The 10 separate test set will also be kept and tested. 
 
  - Config
-1. Train for 90 epochs, with 30 epochs a round.
+1. Train UNet: batch size 2 and 10. Train for 90 epochs, with 30 epochs a round.
+2. Train HorizonNet: 
 
  - Result
