@@ -4,7 +4,6 @@ import argparse
 import numpy as np
 import pandas as pd
 from tqdm import trange
-from tensorboardX import SummaryWriter
 
 import torch
 import torch.nn as nn
@@ -40,13 +39,17 @@ if __name__ == '__main__':
     parser.add_argument('--batch_size_test', default=4, type=int,
                         help='training mini-batch size')
     # Misc arguments
-    parser.add_argument('--no_cuda', action='store_true',
-                        help='disable cuda')
+    parser.add_argument('--gpu', type=int, default=0, 
+                        help='choose id of gpu to use')
     parser.add_argument('--seed', default=42, type=int,
                         help='manual seed')
 
     args = parser.parse_args()
-    device = torch.device('cpu' if args.no_cuda else 'cuda')
+    if args.gpu > 0:
+        os.environ["CUDA_VISIBLE_DEVICES"] = str(args.gpu)
+        device = torch.device('cuda')
+    else:
+        device = torch.device('cpu')
     np.random.seed(args.seed)
     torch.manual_seed(args.seed)
     os.makedirs(args.pred_dir, exist_ok=True)

@@ -4,7 +4,6 @@ import argparse
 import numpy as np
 import pandas as pd
 from tqdm import trange
-from tensorboardX import SummaryWriter
 
 import torch
 import torch.nn as nn
@@ -29,8 +28,8 @@ def feed_forward(net, x, y_bon, y_bon_mask):
     y_bon = y_bon.to(device)
     y_bon_mask = y_bon_mask.to(device)
     y_bon_pred = net(x)
-    loss = F.l1_loss(y_bon_pred, y_bon)
-    # loss = masked_l1_loss(y_bon_pred, y_bon, y_bon_mask)
+    # loss = F.l1_loss(y_bon_pred, y_bon)
+    loss = masked_l1_loss(y_bon_pred, y_bon, y_bon_mask)
     losses = {'total':loss}
     return losses
 
@@ -82,8 +81,8 @@ if __name__ == '__main__':
                         help='factor for L2 regularization')
     parser.add_argument('--bn_momentum', type=float)
     # Misc arguments
-    parser.add_argument('--no_cuda', action='store_true',
-                        help='disable cuda')
+    parser.add_argument('--gpu', type=int, default=0, 
+                        help='choose id of gpu to use')
     parser.add_argument('--seed', default=42, type=int,
                         help='manual seed')
     parser.add_argument('--disp_iter', type=int, default=1,
@@ -92,7 +91,11 @@ if __name__ == '__main__':
                         help='epochs frequency to save state_dict')
     args = parser.parse_args()
     print(args)
-    device = torch.device('cpu' if args.no_cuda else 'cuda')
+    if args.gpu > 0:
+        os.environ["CUDA_VISIBLE_DEVICES"] = str(args.gpu)
+        device = torch.device('cuda')
+    else:
+        device = torch.device('cpu')
     np.random.seed(args.seed)
     torch.manual_seed(args.seed)
     os.makedirs(os.path.join(args.ckpt, args.id), exist_ok=True)

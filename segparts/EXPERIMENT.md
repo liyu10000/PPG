@@ -260,6 +260,10 @@
 
  - Config
 1. Train UNet: batch size 2 and 10. Train for 90 epochs, with 30 epochs a round.
-2. Train HorizonNet: 
+2. Train HorizonNet: no aug. Train for 90 epochs.
+3. Train proposed: 
+	- Full: 180 epochs, with 60 epochs each round.
+	- Aug only: 180 and 90 epochs.
+	- Loss only: 180 epochs.
 
  - Result
