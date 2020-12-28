@@ -379,3 +379,20 @@
  - Result
 1. As always, pick epoch-90 for testing.
 
+
+### Exp27 (12/27/2020)
+ - Idea
+1. Teacher-Student training scheme.
+2. Use 55 POC images as test set. Only aug SR.
+
+ - Config
+1. Train teacher:
+	- Use with fine, labeled data.
+	- Train without low quality (confidence) labels. As a comparison, also with low-q labels.
+	- Exclude patches with labeled areas less than 1 percent.
+	- 30 epochs. Save model at every epoch.
+2. Update labels:
+	- Pick a teacher model that performs well but doesn't overfit on labels.
+	- Take union of manual labels and predicted labels. As a comparison, also take intersection.
+3. Train student:
+	- Use updated labels.

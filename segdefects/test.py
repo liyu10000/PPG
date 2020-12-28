@@ -25,9 +25,10 @@ class Tester(object):
     '''This class takes care of testing of our model'''
     def __init__(self, model, cfg):
         df = pd.read_csv(cfg.names_file)
-        df = df[df[cfg.testkey] == 1]
+        df = df[df[cfg.testkey] != -1]
         names = df.name.to_list()
-        print(len(names), names)
+        # print(len(names), names)
+        print('# files to process', len(names))
         self.num_workers = cfg.num_workers
         self.batch_size = cfg.test_batch_size
         self.image_dir = cfg.test_image_dir
@@ -82,11 +83,18 @@ class Tester(object):
             # cv2.imwrite(os.path.join(self.pred_mask_dir, name+'.png'), pred_mask)
 
     def start(self):
+        # with torch.no_grad():
+        #     for batch in tqdm(self.dataloader, ncols=100):
+        #         names, images, _, _ = batch
+        #         probs = self.forward(images)
+        #         self.save(names, probs)
         with torch.no_grad():
-            for batch in tqdm(self.dataloader, ncols=100):
+            for i, batch in enumerate(self.dataloader):
                 names, images, _, _ = batch
                 probs = self.forward(images)
                 self.save(names, probs)
+                if i % 100 == 0:
+                    print('processed {} / {}'.format(i, len(self.dataloader)))
 
 
 if __name__ == '__main__':

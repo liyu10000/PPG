@@ -107,7 +107,7 @@ def slice_quality_mask(quality_dir, save_dir, name, hws, patch_size=224):
         ratios.append([high_r, low_r, total_r])
     return patch_names, ratios 
 
-def slice_quality_mask_batch(patch_dir, quality_dir, save_dir, patch_info_csv):
+def slice_quality_mask_mp(quality_dir, patch_dir, save_dir, patch_info_csv):
     file_dict = parse_patch_dir(patch_dir)
     os.makedirs(save_dir, exist_ok=True)
     print('# files', len(file_dict))
@@ -145,8 +145,8 @@ if __name__ == '__main__':
     #     show_labels(f, file_dict, save_dir, wh)
 
     # generate quality mask patches and calculate ratios
-    patch_dir = '../datadefects/mixquality-3cls-224/labels'
     quality_dir = '../datadefects/mixquality/labels_qua'
-    save_dir = '../datadefects/mixquality-3cls-224/labels_qua'
-    patch_info_csv = '../datadefects/mixquality-3cls-224/labels_qua.csv'
-    slice_quality_mask_batch(patch_dir, quality_dir, save_dir, patch_info_csv)
+    patch_dir = '../datadefects/mixquality-3cls-224/labels-lowres-aug'
+    save_dir = '../datadefects/mixquality-3cls-224/labels-lowres-aug_qua'
+    patch_info_csv = '../datadefects/mixquality-3cls-224/labels-lowres-aug_qua.csv'
+    slice_quality_mask_mp(quality_dir, patch_dir, save_dir, patch_info_csv)

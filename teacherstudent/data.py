@@ -133,10 +133,11 @@ def generator(
     for img_dir, lbl_dir, lbl_qua_dir, lbl_info_file in zip(image_dir, label_dir, label_qua_dir, label_info_file):
         keys = [f for f in os.listdir(img_dir) if (f.endswith('.png')) and (f.split('_H')[0] in names)]
         df = pd.read_csv(lbl_info_file)
+        df.set_index('name', inplace=True)
+        d = df.to_dict()
         newkeys = []
         for f in keys:
-            row = df.loc[df['name'] == f]
-            if row.iloc[0].high_r > ratios[0] and row.iloc[0].low_r > ratios[1] and row.iloc[0].total_r > ratios[2]:
+            if d['high_r'][f] > ratios[0] and d['low_r'][f] > ratios[1] and d['total_r'][f] > ratios[2]:
                 newkeys.append(f)
         print('apply ratio threshold on patches: from {} to {}'.format(len(keys), len(newkeys)))
         pairs += [(f[:-4], os.path.join(img_dir, f), os.path.join(lbl_dir, f), os.path.join(lbl_qua_dir, f)) for f in newkeys]
